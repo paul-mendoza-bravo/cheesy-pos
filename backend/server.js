@@ -12,17 +12,30 @@ const app = express();
 const httpServer = createServer(app);
 const PORT = process.env.PORT || 3001;
 
-const allowedOrigins = process.env.FRONTEND_URL 
-  ? [process.env.FRONTEND_URL, 'http://localhost:5173'] 
-  : '*';
+const sanitizeOrigin = (url) => {
+  if (!url) return null;
+  let parsed = url.trim();
+  if (!/^https?:\/\//i.test(parsed)) parsed = `https://${parsed}`;
+  return parsed.replace(/\/$/, '');
+};
+
+const productionOrigin = sanitizeOrigin(process.env.FRONTEND_URL);
+
+const corsOptions = {
+  origin: function (origin, callback) {
+    if (!origin || /^https?:\/\/(localhost|127\.0\.0\.1)/.test(origin) || origin === productionOrigin) {
+      return callback(null, true);
+    }
+    console.warn(`[Seguridad CORS] Bloqueado: ${origin}`);
+    return callback(new Error('Restrictive Multi-Origin Policy Violation'));
+  },
+  credentials: true,
+  optionsSuccessStatus: 204
+};
 
 // Setup Socket.io
 const io = new Server(httpServer, {
-  cors: {
-    origin: allowedOrigins,
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
-    credentials: true
-  }
+  cors: corsOptions
 });
 
 // When a client connects
@@ -35,7 +48,7 @@ io.on('connection', (socket) => {
 });
 
 // Middlewares
-app.use(cors({ origin: allowedOrigins, credentials: true }));
+app.use(cors(corsOptions));
 app.use(express.json());
 
 // Main init function
