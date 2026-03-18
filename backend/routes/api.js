@@ -161,6 +161,7 @@ export const createApiRoutes = (io) => {
     cocineroId: row.cocinero_id || null,
     repartidorId: row.repartidor_id || null,
     deliveryLink: row.delivery_link || null,
+    customerPhone: row.customer_phone || null,
     items: row.items || [],
     events: row.events || []
   });
@@ -194,12 +195,12 @@ export const createApiRoutes = (io) => {
     try {
       await client.query('BEGIN');
 
-      const { id, customerName, total, status, items, cajeroId, deliveryLink } = req.body;
+      const { id, customerName, customerPhone, total, status, items, cajeroId, deliveryLink } = req.body;
 
       const orderResult = await client.query(
-        `INSERT INTO orders (id, customer_name, status, total, cajero_id, delivery_link) 
-         VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
-        [id, customerName, status || 'PENDING', total, cajeroId || null, deliveryLink || null]
+        `INSERT INTO orders (id, customer_name, customer_phone, status, total, cajero_id, delivery_link) 
+         VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
+        [id, customerName, customerPhone || null, status || 'PENDING', total, cajeroId || null, deliveryLink || null]
       );
       const newOrderRow = orderResult.rows[0];
 

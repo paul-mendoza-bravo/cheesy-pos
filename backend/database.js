@@ -40,6 +40,7 @@ export const setupDatabase = async () => {
           `ALTER TABLE orders ADD COLUMN IF NOT EXISTS cocinero_id VARCHAR(100) REFERENCES users(id) ON DELETE SET NULL`,
           `ALTER TABLE orders ADD COLUMN IF NOT EXISTS repartidor_id VARCHAR(100) REFERENCES users(id) ON DELETE SET NULL`,
           `ALTER TABLE orders ADD COLUMN IF NOT EXISTS delivery_link TEXT`,
+          `ALTER TABLE orders ADD COLUMN IF NOT EXISTS customer_phone VARCHAR(50)`,
         ];
 
         for (const migration of migrations) {

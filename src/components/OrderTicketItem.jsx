@@ -1,5 +1,5 @@
 import React from 'react';
-import { Clock, Check, MapPin } from 'lucide-react';
+import { Clock, Check, MapPin, Phone } from 'lucide-react';
 
 const OrderTicketItem = ({ order, actionButton, actionLabel, actionColor = 'var(--success-color)' }) => {
   const timeElapsed = Math.floor((new Date() - new Date(order.timestamp)) / 60000); // in minutes
@@ -17,9 +17,19 @@ const OrderTicketItem = ({ order, actionButton, actionLabel, actionColor = 'var(
               href={order.deliveryLink} 
               target="_blank" 
               rel="noopener noreferrer"
-              style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', marginTop: '6px', color: 'var(--primary-color)', fontSize: '13px', fontWeight: '600', textDecoration: 'none', background: 'var(--focus-ring)', padding: '4px 10px', borderRadius: '20px' }}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', marginTop: '6px', marginRight: '8px', color: 'var(--primary-color)', fontSize: '13px', fontWeight: '600', textDecoration: 'none', background: 'var(--focus-ring)', padding: '4px 10px', borderRadius: '20px' }}
             >
-              <MapPin size={13} /> Ver Ubicación en Maps
+              <MapPin size={13} /> Maps
+            </a>
+          )}
+          {order.customerPhone && (
+            <a 
+              href={`https://wa.me/${order.customerPhone.replace(/[^0-9+]/g, '')}`} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', marginTop: '6px', color: '#25D366', fontSize: '13px', fontWeight: '600', textDecoration: 'none', background: 'rgba(37, 211, 102, 0.15)', padding: '4px 10px', borderRadius: '20px' }}
+            >
+              <Phone size={13} /> WhatsApp
             </a>
           )}
         </div>

@@ -2,13 +2,14 @@ import React, { useState } from 'react';
 import { useCart } from '../context/CartContext';
 import { useOrders } from '../context/OrdersContext';
 import { useAuth } from '../context/AuthContext';
-import { X, Minus, Plus, ShoppingBag, MapPin, Trash2, Send } from 'lucide-react';
+import { X, Minus, Plus, ShoppingBag, MapPin, Trash2, Send, Phone } from 'lucide-react';
 
 const CartDrawer = ({ isOpen, onClose }) => {
   const { cart, removeFromCart, addToCart, decreaseQuantity, clearCart, cartTotal, cartCount } = useCart();
   const { addOrder } = useOrders();
   const { currentUser } = useAuth();
   const [customerName, setCustomerName] = useState('');
+  const [customerPhone, setCustomerPhone] = useState('');
   const [deliveryLink, setDeliveryLink] = useState('');
 
   if (!isOpen) return null;
@@ -17,12 +18,14 @@ const CartDrawer = ({ isOpen, onClose }) => {
     if (cart.length === 0) return;
     addOrder({
       customerName: customerName || 'Cliente en mostrador',
+      customerPhone: customerPhone.trim() || null,
       deliveryLink: deliveryLink.trim() || null,
       items: cart,
       total: cartTotal
     }, currentUser?.id || null);
     clearCart();
     setCustomerName('');
+    setCustomerPhone('');
     setDeliveryLink('');
     onClose();
   };
@@ -247,6 +250,32 @@ const CartDrawer = ({ isOpen, onClose }) => {
             onFocus={e => e.target.style.borderColor = 'var(--primary-color)'}
             onBlur={e => e.target.style.borderColor = 'var(--border-color)'}
           />
+
+          {/* Phone number */}
+          <div style={{ position: 'relative', marginBottom: '8px' }}>
+            <Phone size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--primary-color)' }} />
+            <input 
+              type="tel" 
+              placeholder="☎️ Teléfono (opcional)"
+              value={customerPhone}
+              onChange={(e) => setCustomerPhone(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '10px 14px 10px 36px',
+                borderRadius: 'var(--border-radius-md)',
+                border: '1px solid var(--border-color)',
+                fontFamily: 'inherit',
+                fontSize: '14px',
+                backgroundColor: 'var(--bg-color)',
+                color: 'var(--text-main)',
+                outline: 'none',
+                boxSizing: 'border-box',
+                transition: 'border-color 0.2s'
+              }}
+              onFocus={e => e.target.style.borderColor = 'var(--primary-color)'}
+              onBlur={e => e.target.style.borderColor = 'var(--border-color)'}
+            />
+          </div>
 
           {/* Google Maps link */}
           <div style={{ position: 'relative', marginBottom: '16px' }}>
