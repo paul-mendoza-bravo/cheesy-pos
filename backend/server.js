@@ -12,11 +12,16 @@ const app = express();
 const httpServer = createServer(app);
 const PORT = process.env.PORT || 3001;
 
+const allowedOrigins = process.env.FRONTEND_URL 
+  ? [process.env.FRONTEND_URL, 'http://localhost:5173'] 
+  : '*';
+
 // Setup Socket.io
 const io = new Server(httpServer, {
   cors: {
-    origin: '*',
-    methods: ['GET', 'POST', 'PUT', 'DELETE']
+    origin: allowedOrigins,
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    credentials: true
   }
 });
 
@@ -30,7 +35,7 @@ io.on('connection', (socket) => {
 });
 
 // Middlewares
-app.use(cors());
+app.use(cors({ origin: allowedOrigins, credentials: true }));
 app.use(express.json());
 
 // Main init function
@@ -40,6 +45,11 @@ const init = async () => {
 
     // Pass io into routes so they can emit events
     app.use('/api', createApiRoutes(io));
+
+    // Endpoint de latidos (Heartbeat) para mitigar Cold Starts en PaaS (Render/Railway)
+    app.get('/api/health', (req, res) => {
+      res.status(200).json({ status: 'active', timestamp: new Date() });
+    });
 
     app.get('/', (req, res) => {
       res.json({ message: 'Welcome to Cheesy Backend API (Socket.io enabled)' });

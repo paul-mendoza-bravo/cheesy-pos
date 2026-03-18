@@ -5,8 +5,9 @@ const OrdersContext = createContext();
 
 export const useOrders = () => useContext(OrdersContext);
 
-const API_URL = 'http://localhost:3001/api';
-const SOCKET_URL = 'http://localhost:3001';
+const HOST_URL = import.meta.env.VITE_API_URL || `http://${window.location.hostname}:3001`;
+const API_URL = `${HOST_URL}/api`;
+const SOCKET_URL = HOST_URL;
 
 export const OrdersProvider = ({ children }) => {
   const [orders, setOrders] = useState([]);
@@ -27,8 +28,15 @@ export const OrdersProvider = ({ children }) => {
     };
     fetchOrders();
 
-    // 2. Connect to Socket.io for real-time updates
-    const socket = io(SOCKET_URL, { transports: ['websocket'] });
+    // 2. Connect to Socket.io for real-time updates (Aggressive Reconnection)
+    const socket = io(SOCKET_URL, { 
+      transports: ['websocket'],
+      reconnection: true,
+      reconnectionAttempts: Infinity,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      timeout: 20000,
+    });
     socketRef.current = socket;
 
     socket.on('connect', () => {

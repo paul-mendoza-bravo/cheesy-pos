@@ -3,7 +3,8 @@ import React, { createContext, useState, useContext, useEffect } from 'react';
 const AuthContext = createContext();
 export const useAuth = () => useContext(AuthContext);
 
-const API_URL = 'http://localhost:3001/api';
+const HOST_URL = import.meta.env.VITE_API_URL || `http://${window.location.hostname}:3001`;
+const API_URL = `${HOST_URL}/api`;
 
 const MASTER_PASSWORD = 'Cheesy12345';
 
