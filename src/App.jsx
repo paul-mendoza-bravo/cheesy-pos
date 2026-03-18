@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
 import { OrdersProvider } from './context/OrdersContext';
+import { InventoryProvider } from './context/InventoryContext';
 
 import RoleSwitcher from './components/RoleSwitcher';
 import PosMenu from './pages/PosMenu';
@@ -40,8 +41,9 @@ function App() {
   return (
     <AuthProvider>
       <OrdersProvider>
-        <CartProvider>
-          <BrowserRouter>
+        <InventoryProvider>
+          <CartProvider>
+            <BrowserRouter>
             <Routes>
               <Route path="/login" element={<Login />} />
               <Route path="/" element={<Navigate to="/pos" replace />} />
@@ -81,7 +83,8 @@ function App() {
 
             </Routes>
           </BrowserRouter>
-        </CartProvider>
+          </CartProvider>
+        </InventoryProvider>
       </OrdersProvider>
     </AuthProvider>
   );

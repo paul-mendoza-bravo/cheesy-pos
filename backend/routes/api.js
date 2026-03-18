@@ -356,6 +356,65 @@ export const createApiRoutes = (io) => {
     }
   });
 
+  // ==========================================
+  // INVENTORY ENDPOINTS
+  // ==========================================
+
+  // Get all inventory reports
+  router.get('/inventory', async (req, res) => {
+    try {
+      const result = await pool.query(`
+        SELECT r.*, u.id as cook_name
+        FROM inventory_reports r
+        LEFT JOIN users u ON r.cook_id = u.id
+        ORDER BY r.created_at DESC
+      `);
+      res.json(result.rows.map(row => ({
+        id: row.id,
+        cookId: row.cook_id,
+        cookName: row.cook_name || 'Desconocido',
+        missingItems: typeof row.missing_items === 'string' ? JSON.parse(row.missing_items) : row.missing_items,
+        createdAt: row.created_at
+      })));
+    } catch (error) {
+      console.error('Fetch inventory error:', error);
+      res.status(500).json({ error: 'Error fetching inventory reports' });
+    }
+  });
+
+  // Submit new inventory report
+  router.post('/inventory', async (req, res) => {
+    try {
+      const { missingItems, cookId } = req.body;
+      
+      if (!missingItems || !Array.isArray(missingItems)) {
+        return res.status(400).json({ error: 'missingItems array is required' });
+      }
+
+      const result = await pool.query(
+        'INSERT INTO inventory_reports (cook_id, missing_items) VALUES ($1, $2) RETURNING *',
+        [cookId || null, JSON.stringify(missingItems)]
+      );
+      
+      const newReport = {
+        id: result.rows[0].id,
+        cookId: result.rows[0].cook_id,
+        missingItems: missingItems,
+        createdAt: result.rows[0].created_at
+      };
+
+      // Emit realtime event
+      io.emit('nuevo_inventario', newReport);
+      console.log(`[Socket] Emitido: nuevo_inventario por ${cookId || 'N/A'}`);
+      
+      res.status(201).json(newReport);
+
+    } catch (error) {
+      console.error('Submit inventory error:', error);
+      res.status(500).json({ error: 'Error submitting inventory report' });
+    }
+  });
+
   return router;
 };
 

@@ -1,16 +1,18 @@
 import React, { useState } from 'react';
 import { useOrders } from '../context/OrdersContext';
 import { useAuth } from '../context/AuthContext';
+import { useInventory } from '../context/InventoryContext';
 import { useNavigate } from 'react-router-dom';
-import { BarChart3, DollarSign, ListOrdered, CheckCircle2, Trash2, ArchiveRestore, Users, Check, X, LogOut, Settings, Beef, Calendar, ClipboardList } from 'lucide-react';
+import { BarChart3, DollarSign, ListOrdered, CheckCircle2, Trash2, ArchiveRestore, Users, Check, X, LogOut, Settings, Beef, Calendar, ClipboardList, Package, Download } from 'lucide-react';
 import OrderHistory from '../components/OrderHistory';
 
 const AdminDashboard = () => {
   const { orders, deleteOrder, restoreOrder, permanentlyDeleteOrder } = useOrders();
   const { currentUser, pendingUsers, approveUser, rejectUser, logout } = useAuth();
+  const { reports } = useInventory();
   const navigate = useNavigate();
   
-  const [viewTab, setViewTab] = useState('active'); // 'active' or 'trash'
+  const [viewTab, setViewTab] = useState('active'); // 'active', 'trash', 'history', 'inventory'
 
   // Filter orders based on their trashed status
   const activeOrders = orders.filter(o => o.status !== 'TRASHED');
@@ -61,6 +63,17 @@ const AdminDashboard = () => {
     if (window.confirm(`¿ELIMINAR PERMANENTEMENTE la orden #${orderId}? Esta acción no se puede deshacer.`)) {
       permanentlyDeleteOrder(orderId);
     }
+  };
+
+  const handleDownloadJSON = (report) => {
+    const data = JSON.stringify(report, null, 2);
+    const blob = new Blob([data], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Inventario_Faltantes_${new Date(report.createdAt).toLocaleDateString('es-MX').replace(/\//g, '-')}_Cook${report.cookName}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   const displayedOrders = viewTab === 'active' ? activeOrders : trashedOrders;
@@ -162,6 +175,22 @@ const AdminDashboard = () => {
           >
             <ClipboardList size={14} />
             Historial
+          </button>
+          <button 
+            className="btn"
+            style={{ 
+              background: viewTab === 'inventory' ? 'var(--bg-color)' : 'transparent', 
+              boxShadow: viewTab === 'inventory' ? 'var(--shadow-sm)' : 'none',
+              border: 'none',
+              fontSize: '12px',
+              padding: '6px 12px',
+              color: viewTab === 'inventory' ? 'var(--primary-color)' : 'inherit',
+              display: 'flex', alignItems: 'center', gap: '6px'
+            }}
+            onClick={() => setViewTab('inventory')}
+          >
+            <Package size={14} />
+            Inventarios
           </button>
           <button 
             className="btn"
@@ -305,6 +334,52 @@ const AdminDashboard = () => {
             </div>
           </div>
         </>
+      )}
+
+      {/* Inventory Tab */}
+      {viewTab === 'inventory' && (
+        <div style={{ marginBottom: '32px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+            <h2 style={{ fontSize: '18px', margin: 0 }}>Reportes de Inventario Recibidos</h2>
+          </div>
+          
+          <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+            {reports.map((r, idx) => (
+              <div key={r.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px', borderBottom: idx !== reports.length - 1 ? '1px solid var(--border-color)' : 'none', flexWrap: 'wrap', gap: '16px' }}>
+                <div>
+                  <div style={{ fontWeight: '600', fontSize: '16px' }}>
+                    <Package size={16} color="var(--primary-color)" style={{ verticalAlign: 'middle', marginRight: '6px' }} />
+                    Reporte de Faltantes (#{r.id})
+                  </div>
+                  <div style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '4px' }}>
+                    Por: <span style={{ color: 'var(--text-main)', fontWeight: '600' }}>{r.cookName}</span> • {new Date(r.createdAt).toLocaleString('es-MX')}
+                  </div>
+                  <div style={{ marginTop: '12px', display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                    {r.missingItems.map(item => (
+                      <span key={item} style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', color: '#ef4444', padding: '4px 8px', borderRadius: '12px', fontSize: '12px', fontWeight: 'bold' }}>
+                        {item}
+                      </span>
+                    ))}
+                    {r.missingItems.length === 0 && <span style={{ color: 'var(--success-color)', fontSize: '12px', fontWeight: 'bold' }}>✓ Todo en orden, sin faltantes.</span>}
+                  </div>
+                </div>
+                <button 
+                  className="btn" 
+                  onClick={() => handleDownloadJSON(r)} 
+                  style={{ padding: '10px 16px', background: 'var(--primary-color)', color: 'white', border: 'none', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', fontWeight: '600', boxShadow: 'var(--shadow-sm)' }}
+                >
+                  <Download size={16} /> Descargar JSON
+                </button>
+              </div>
+            ))}
+            {reports.length === 0 && (
+              <div style={{ padding: '40px 20px', textAlign: 'center', color: 'var(--text-muted)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
+                <Package size={32} opacity={0.5} />
+                No hay reportes de inventario recibidos.
+              </div>
+            )}
+          </div>
+        </div>
       )}
     </div>
   );

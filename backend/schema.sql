@@ -43,3 +43,11 @@ CREATE TABLE IF NOT EXISTS order_events (
 INSERT INTO users (id, role, status)
 VALUES ('SUPERADMIN', 'admin', 'ACTIVE')
 ON CONFLICT (id) DO NOTHING;
+
+-- Inventory Reports table
+CREATE TABLE IF NOT EXISTS inventory_reports (
+    id SERIAL PRIMARY KEY,
+    cook_id VARCHAR(100) REFERENCES users(id) ON DELETE SET NULL,
+    missing_items JSONB NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
