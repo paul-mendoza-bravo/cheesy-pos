@@ -20,9 +20,12 @@ const PrivateRoute = ({ children, allowedRoles }) => {
     return <Navigate to="/login" replace />;
   }
 
-  // Verificación de Roles (Role-Based Access Control)
-  if (allowedRoles && !allowedRoles.includes(currentUser.role) && currentUser.role !== 'admin') {
-    // Si no tiene el rol y no es admin supremo, lo mandamos a la caja (o ruta por defecto)
+  // Verificación de Roles Múltiples (Role-Based Access Control)
+  const userRoles = currentUser.role ? currentUser.role.split(',') : [];
+  const hasAccess = allowedRoles ? userRoles.some(r => allowedRoles.includes(r)) : true;
+
+  if (allowedRoles && !hasAccess && !userRoles.includes('admin')) {
+    // Si no tiene ninguno de los roles permitidos y no es admin supremo
     return <Navigate to="/pos" replace />;
   }
   

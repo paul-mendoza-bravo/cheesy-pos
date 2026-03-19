@@ -19,7 +19,8 @@ const RoleSwitcher = () => {
 
   if (!currentUser) return null;
 
-  const visibleRoles = roles.filter(r => r.allowed.includes(currentUser.role) || currentUser.role === 'admin');
+  const userRoles = currentUser.role ? currentUser.role.split(',') : [];
+  const visibleRoles = roles.filter(r => r.allowed.some(allowed => userRoles.includes(allowed)) || userRoles.includes('admin'));
 
   const pendingKitchen = orders.filter(o => o.status === 'PENDING').length;
   const readyDelivery = orders.filter(o => o.status === 'READY').length;

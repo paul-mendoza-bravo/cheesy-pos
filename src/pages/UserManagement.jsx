@@ -11,12 +11,68 @@ const ROLES = [
   { value: 'admin', label: 'Administrador' }
 ];
 
+const MultiRoleSelect = ({ currentRoleString, onRoleChange }) => {
+  const currentRoles = currentRoleString ? currentRoleString.split(',') : ['ayudante'];
+  const [isOpen, setIsOpen] = React.useState(false);
+  const containerRef = React.useRef(null);
+
+  React.useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (containerRef.current && !containerRef.current.contains(e.target)) setIsOpen(false);
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const toggleRole = (val) => {
+    let newRoles;
+    if (currentRoles.includes(val)) {
+      newRoles = currentRoles.filter(r => r !== val);
+    } else {
+      newRoles = [...currentRoles, val];
+    }
+    if (newRoles.length === 0) newRoles = ['ayudante']; // Fallback
+    onRoleChange(newRoles.join(','));
+  };
+
+  const displayText = currentRoles.length === ROLES.length 
+    ? 'Todos los roles' 
+    : currentRoles.map(r => ROLES.find(x => x.value === r)?.label || r).join(', ');
+
+  return (
+    <div ref={containerRef} style={{ position: 'relative', width: '220px' }}>
+      <div 
+        onClick={() => setIsOpen(!isOpen)}
+        style={{ padding: '8px 12px', border: '1px solid var(--border-color)', borderRadius: '8px', fontSize: '12px', cursor: 'pointer', background: 'var(--bg-color)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+        title={displayText}
+      >
+        {displayText}
+      </div>
+      {isOpen && (
+        <div style={{ position: 'absolute', top: '100%', right: 0, marginTop: '4px', background: 'var(--bg-container)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '8px', zIndex: 10, display: 'flex', flexDirection: 'column', gap: '8px', boxShadow: 'var(--shadow-sm)', width: '220px' }}>
+          {ROLES.map(role => (
+            <label key={role.value} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', cursor: 'pointer', color: 'var(--text-main)' }}>
+              <input 
+                type="checkbox" 
+                checked={currentRoles.includes(role.value)}
+                onChange={() => toggleRole(role.value)}
+                style={{ accentColor: 'var(--primary-color)' }}
+              />
+              {role.label}
+            </label>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
 const UserManagement = () => {
   const { activeUsers, updateUserRole, currentUser, rejectUser } = useAuth();
   const navigate = useNavigate();
 
-  const handleRoleChange = (userId, e) => {
-    updateUserRole(userId, e.target.value);
+  const handleRoleChange = (userId, newRoleString) => {
+    updateUserRole(userId, newRoleString);
   };
 
   const handleDeleteUser = (userId) => {
@@ -80,16 +136,10 @@ const UserManagement = () => {
                   <td style={{ padding: '16px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '12px' }}>
                       <Shield size={16} color="var(--primary-color)" />
-                      <select 
-                        value={user.role === 'staff' ? 'ayudante' : (user.role || 'ayudante')} 
-                        onChange={(e) => handleRoleChange(user.id, e)}
-                        className="input-field"
-                        style={{ padding: '8px 12px', width: '200px', fontSize: '14px', cursor: 'pointer' }}
-                      >
-                        {ROLES.map(role => (
-                          <option key={role.value} value={role.value}>{role.label}</option>
-                        ))}
-                      </select>
+                      <MultiRoleSelect 
+                        currentRoleString={user.role === 'staff' ? 'ayudante' : (user.role || 'ayudante')}
+                        onRoleChange={(newRoles) => handleRoleChange(user.id, newRoles)}
+                      />
 
                       <button 
                         onClick={() => handleDeleteUser(user.id)}

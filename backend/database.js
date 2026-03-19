@@ -36,6 +36,8 @@ export const setupDatabase = async () => {
 
         // Run migrations for existing databases (add new columns if missing)
         const migrations = [
+          `ALTER TABLE users DROP CONSTRAINT IF EXISTS users_role_check`,
+          `ALTER TABLE users ALTER COLUMN role TYPE VARCHAR(255)`,
           `ALTER TABLE orders ADD COLUMN IF NOT EXISTS cajero_id VARCHAR(100) REFERENCES users(id) ON DELETE SET NULL`,
           `ALTER TABLE orders ADD COLUMN IF NOT EXISTS cocinero_id VARCHAR(100) REFERENCES users(id) ON DELETE SET NULL`,
           `ALTER TABLE orders ADD COLUMN IF NOT EXISTS repartidor_id VARCHAR(100) REFERENCES users(id) ON DELETE SET NULL`,
