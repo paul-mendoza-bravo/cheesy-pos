@@ -1,5 +1,6 @@
 import React, { createContext, useState, useContext, useEffect, useRef } from 'react';
 import { io } from 'socket.io-client';
+import { playNotificationSound } from '../utils/sound';
 
 const OrdersContext = createContext();
 
@@ -47,9 +48,14 @@ export const OrdersProvider = ({ children }) => {
       console.log('[Socket] Desconectado del servidor');
     });
 
-    // 🔴 New order from Caja → show immediately in Cocina and Repartidor
     socket.on('nuevo_pedido', (newOrder) => {
       console.log('[Socket] Nuevo pedido recibido:', newOrder.id);
+      
+      // Notificación sonora para Cocineros y Admins
+      if (window.location.pathname === '/kitchen' || window.location.pathname === '/admin') {
+        playNotificationSound();
+      }
+
       setOrders(prev => {
         // Avoid duplicates if the same client created it
         const exists = prev.some(o => o.id === newOrder.id);
@@ -58,9 +64,17 @@ export const OrdersProvider = ({ children }) => {
       });
     });
 
-    // 🔴 Status change (PENDING→READY→DELIVERED→TRASHED) → all screens update
     socket.on('pedido_actualizado', (updatedOrder) => {
       console.log('[Socket] Pedido actualizado:', updatedOrder.id, '→', updatedOrder.status);
+      
+      // Notificación sonora basada en el rol y el estado
+      if (updatedOrder.status === 'READY' && (window.location.pathname === '/delivery' || window.location.pathname === '/admin')) {
+        playNotificationSound();
+      }
+      if (updatedOrder.status === 'DELIVERED' && window.location.pathname === '/admin') {
+        playNotificationSound();
+      }
+
       setOrders(prev =>
         prev.map(order =>
           order.id === updatedOrder.id

@@ -1,5 +1,6 @@
 import React, { createContext, useState, useContext, useEffect, useRef } from 'react';
 import { io } from 'socket.io-client';
+import { playNotificationSound } from '../utils/sound';
 
 const InventoryContext = createContext();
 
@@ -35,6 +36,11 @@ export const InventoryProvider = ({ children }) => {
 
     socket.on('nuevo_inventario', (newReport) => {
       console.log('[Socket] Nuevo reporte de inventario:', newReport.id);
+      
+      if (window.location.pathname === '/admin') {
+        playNotificationSound();
+      }
+
       setReports(prev => {
         const exists = prev.some(r => r.id === newReport.id);
         if (exists) return prev;
