@@ -24,3 +24,7 @@ dist-ssr
 *.sw?
 .env
 *.env
+
+# Runtime output logs (local dev only)
+backend/err.txt
+backend/out.txt

@@ -151,9 +151,12 @@ export const createApiRoutes = (io) => {
   // ==========================================
 
   // Helper: transform DB row to frontend-friendly format
+  // Helper: transform DB row to frontend-friendly format
   const formatOrder = (row) => ({
     id: row.id,
-    customerName: row.customer_name || row.customerName || 'Cliente',
+    customerName: row.b2c_customer_name || row.customer_name || 'Cliente',
+    source: row.source || 'POS',
+    customerClientId: row.customer_client_id || null,
     status: row.status,
     total: parseFloat(row.total) || 0,
     createdAt: row.created_at || row.createdAt,
@@ -169,7 +172,12 @@ export const createApiRoutes = (io) => {
   // Get all orders (with their items)
   router.get('/orders', async (req, res) => {
     try {
-      const ordersResult = await pool.query('SELECT * FROM orders ORDER BY created_at DESC');
+      const ordersResult = await pool.query(`
+        SELECT o.*, c.name as b2c_customer_name 
+        FROM orders o
+        LEFT JOIN customers c ON o.customer_client_id = c.id
+        ORDER BY o.created_at DESC
+      `);
 
       const orders = [];
       for (let row of ordersResult.rows) {
@@ -247,17 +255,17 @@ export const createApiRoutes = (io) => {
       const { id } = req.params;
       const { status, userId } = req.body;
 
-      const validStatuses = ['PENDING', 'READY', 'DELIVERED', 'TRASHED'];
+      // Estados válidos: incluye ciclo de vida B2C (ACCEPTED, REJECTED, COOKING)
+      const validStatuses = ['PENDING', 'ACCEPTED', 'REJECTED', 'COOKING', 'READY', 'DELIVERED', 'TRASHED'];
       if (!validStatuses.includes(status)) {
-        return res.status(400).json({ error: 'Invalid status' });
+        return res.status(400).json({ error: 'Estado de orden inválido.' });
       }
 
-      // Update status
       let updateQuery = 'UPDATE orders SET status = $1';
       const values = [status];
       let paramIdx = 2;
 
-      // Assign the employee based on what status they're setting
+      // Asignar empleado responsable según el estado
       if (status === 'READY' && userId) {
         updateQuery += `, cocinero_id = $${paramIdx}`;
         values.push(userId);
@@ -275,10 +283,10 @@ export const createApiRoutes = (io) => {
 
       if (result.rows.length === 0) {
         await client.query('ROLLBACK');
-        return res.status(404).json({ error: 'Order not found' });
+        return res.status(404).json({ error: 'Orden no encontrada.' });
       }
 
-      // Record the event
+      // Registrar evento de auditoría
       await client.query(
         'INSERT INTO order_events (order_id, estado, usuario_id) VALUES ($1, $2, $3)',
         [id, status, userId || null]
@@ -288,9 +296,34 @@ export const createApiRoutes = (io) => {
 
       const updatedOrder = formatOrder(result.rows[0]);
 
-      // 🔴 Emit real-time event
+      // Emitir al canal general de staff (POS)
       io.emit('pedido_actualizado', updatedOrder);
       console.log(`[Socket] Emitido: pedido_actualizado #${updatedOrder.id} → ${status} (por: ${userId || 'N/A'})`);
+
+      // Emitir eventos privados al room del cliente B2C (si la orden proviene de CLIENT)
+      const customerClientId = result.rows[0].customer_client_id;
+      if (customerClientId) {
+        const customerRoom = `customer_${customerClientId}`;
+        const clientPayload = { orderId: id, status };
+
+        if (status === 'ACCEPTED') {
+          io.to(customerRoom).emit('order_accepted', { ...clientPayload, estimatedMinutes: 15 });
+          console.log(`[Socket] Emitido: order_accepted → ${customerRoom}`);
+        } else if (status === 'REJECTED') {
+          const { reason } = req.body;
+          io.to(customerRoom).emit('order_rejected', { ...clientPayload, reason: reason || 'El local no puede procesar tu pedido en este momento.' });
+          console.log(`[Socket] Emitido: order_rejected → ${customerRoom}`);
+        } else if (status === 'COOKING') {
+          io.to(customerRoom).emit('order_cooking', clientPayload);
+          console.log(`[Socket] Emitido: order_cooking → ${customerRoom}`);
+        } else if (status === 'READY') {
+          io.to(customerRoom).emit('order_ready', clientPayload);
+          console.log(`[Socket] Emitido: order_ready → ${customerRoom}`);
+        } else if (status === 'DELIVERED') {
+          io.to(customerRoom).emit('order_delivered', clientPayload);
+          console.log(`[Socket] Emitido: order_delivered → ${customerRoom}`);
+        }
+      }
 
       res.json(updatedOrder);
 
@@ -412,6 +445,184 @@ export const createApiRoutes = (io) => {
     } catch (error) {
       console.error('Submit inventory error:', error);
       res.status(500).json({ error: 'Error submitting inventory report' });
+    }
+  });
+
+  // ==========================================
+  // BUSINESS INTELLIGENCE ENDPOINTS
+  // Unit economics hardcoded per business spec.
+  // All aggregation runs in PostgreSQL — zero array processing on the client.
+  // ==========================================
+
+  // Diccionario de costos unitarios (base de cálculo de COGS)
+  // Refleja el mismo catálogo de client.js y el POS frontend.
+  const COST_MAP_SQL = `
+    CASE oi.name
+      WHEN 'COMBO MEXA'        THEN 50.50
+      WHEN 'La Mexa'           THEN 32.50
+      WHEN 'La BBQ'            THEN 31.00
+      WHEN 'La Hawaiana'       THEN 30.00
+      WHEN 'Clásica'           THEN 25.00
+      WHEN 'Papas Especiales'  THEN 26.00
+      WHEN 'Papas Sencillas'   THEN 18.00
+      ELSE 0
+    END
+  `;
+
+  const MARGIN_MAP_SQL = `
+    CASE oi.name
+      WHEN 'COMBO MEXA'        THEN 89.50
+      WHEN 'La Mexa'           THEN 47.50
+      WHEN 'La BBQ'            THEN 44.00
+      WHEN 'La Hawaiana'       THEN 45.00
+      WHEN 'Clásica'           THEN 40.00
+      WHEN 'Papas Especiales'  THEN 34.00
+      WHEN 'Papas Sencillas'   THEN 17.00
+      ELSE 0
+    END
+  `;
+
+  // GET /api/bi/summary
+  // Retorna métricas agregadas del día: ingresos brutos, COGS, AOV, conteo de órdenes.
+  // Usa CTE para evitar doble-conteo en el JOIN entre orders y order_items.
+  router.get('/bi/summary', async (req, res) => {
+    try {
+      const result = await pool.query(`
+        WITH delivered_today AS (
+          SELECT id, total
+          FROM orders
+          WHERE status = 'DELIVERED'
+            AND created_at >= CURRENT_DATE
+        ),
+        item_costs AS (
+          SELECT
+            oi.order_id,
+            SUM(${COST_MAP_SQL} * oi.quantity) AS cost
+          FROM order_items oi
+          INNER JOIN delivered_today dt ON dt.id = oi.order_id
+          GROUP BY oi.order_id
+        )
+        SELECT
+          COUNT(dt.id)::int                                AS order_count,
+          ROUND(COALESCE(SUM(dt.total), 0)::numeric, 2)   AS gross_revenue,
+          ROUND(COALESCE(AVG(dt.total), 0)::numeric, 2)   AS aov,
+          ROUND(COALESCE(SUM(ic.cost), 0)::numeric, 2)    AS total_cogs
+        FROM delivered_today dt
+        LEFT JOIN item_costs ic ON ic.order_id = dt.id
+      `);
+
+      const row = result.rows[0];
+      res.json({
+        orderCount:   parseInt(row.order_count)       || 0,
+        grossRevenue: parseFloat(row.gross_revenue)   || 0,
+        aov:          parseFloat(row.aov)             || 0,
+        totalCogs:    parseFloat(row.total_cogs)      || 0,
+      });
+    } catch (error) {
+      console.error('[BI Summary] Error:', error);
+      res.status(500).json({ error: 'Error calculando métricas BI.' });
+    }
+  });
+
+  // GET /api/bi/top-products
+  // Top 3 productos del turno clasificados por volumen y margen de contribución.
+  router.get('/bi/top-products', async (req, res) => {
+    try {
+      const result = await pool.query(`
+        SELECT
+          oi.name                                           AS product_name,
+          SUM(oi.quantity)::int                             AS total_qty,
+          ROUND(SUM(oi.price * oi.quantity)::numeric, 2)   AS gross_revenue,
+          ROUND(SUM(${MARGIN_MAP_SQL} * oi.quantity)::numeric, 2) AS contribution_margin
+        FROM order_items oi
+        INNER JOIN orders o ON o.id = oi.order_id
+        WHERE o.status = 'DELIVERED'
+          AND o.created_at >= CURRENT_DATE
+        GROUP BY oi.name
+        ORDER BY total_qty DESC, contribution_margin DESC
+        LIMIT 3
+      `);
+
+      res.json(result.rows.map(r => ({
+        productName:          r.product_name,
+        totalQty:             parseInt(r.total_qty),
+        grossRevenue:         parseFloat(r.gross_revenue),
+        contributionMargin:   parseFloat(r.contribution_margin),
+      })));
+    } catch (error) {
+      console.error('[BI Top Products] Error:', error);
+      res.status(500).json({ error: 'Error calculando top productos.' });
+    }
+  });
+
+  // POST /api/cash-outflows
+  // Registra un egreso de efectivo no planificado en el ledger.
+  router.post('/cash-outflows', async (req, res) => {
+    try {
+      const { amount, description, recordedBy } = req.body;
+
+      if (!amount || isNaN(parseFloat(amount)) || parseFloat(amount) <= 0) {
+        return res.status(400).json({ error: 'El monto debe ser un número positivo.' });
+      }
+      if (!description || description.trim().length === 0) {
+        return res.status(400).json({ error: 'La descripción es requerida.' });
+      }
+
+      const result = await pool.query(
+        `INSERT INTO cash_outflows (amount, description, recorded_by)
+         VALUES ($1, $2, $3) RETURNING *`,
+        [parseFloat(amount).toFixed(2), description.trim(), recordedBy || null]
+      );
+
+      const row = result.rows[0];
+      console.log(`[BI] Egreso registrado: $${row.amount} — ${row.description} (por: ${row.recorded_by || 'N/A'})`);
+
+      res.status(201).json({
+        id:          row.id,
+        amount:      parseFloat(row.amount),
+        description: row.description,
+        recordedBy:  row.recorded_by,
+        createdAt:   row.created_at,
+      });
+    } catch (error) {
+      console.error('[Cash Outflow POST] Error:', error);
+      res.status(500).json({ error: 'Error registrando egreso.' });
+    }
+  });
+
+  // GET /api/cash-outflows/today
+  // Retorna todos los egresos del día junto con el total acumulado.
+  router.get('/cash-outflows/today', async (req, res) => {
+    try {
+      const result = await pool.query(`
+        SELECT
+          id,
+          amount,
+          description,
+          recorded_by,
+          created_at,
+          SUM(amount) OVER () AS daily_total
+        FROM cash_outflows
+        WHERE created_at >= CURRENT_DATE
+        ORDER BY created_at DESC
+      `);
+
+      const outflows = result.rows.map(r => ({
+        id:          r.id,
+        amount:      parseFloat(r.amount),
+        description: r.description,
+        recordedBy:  r.recorded_by,
+        createdAt:   r.created_at,
+      }));
+
+      const dailyTotal = result.rows.length > 0
+        ? parseFloat(result.rows[0].daily_total)
+        : 0;
+
+      res.json({ outflows, dailyTotal: Math.round(dailyTotal * 100) / 100 });
+    } catch (error) {
+      console.error('[Cash Outflows GET] Error:', error);
+      res.status(500).json({ error: 'Error obteniendo egresos.' });
     }
   });
 

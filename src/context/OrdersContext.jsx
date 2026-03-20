@@ -1,4 +1,5 @@
 import React, { createContext, useState, useContext, useEffect, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
 import { io } from 'socket.io-client';
 import { playNotificationSound } from '../utils/sound';
 
@@ -14,8 +15,18 @@ export const OrdersProvider = ({ children }) => {
   const [orders, setOrders] = useState([]);
   const socketRef = useRef(null);
 
+  // useLocation funciona porque OrdersProvider ahora vive dentro de BrowserRouter
+  // (montado dentro de StaffShell, que es un layout route).
+  // pathnameRef permite que los event handlers del socket lean la ruta actual
+  // sin necesidad de recrear la conexión cuando el usuario navega.
+  const { pathname } = useLocation();
+  const pathnameRef = useRef(pathname);
   useEffect(() => {
-    // 1. Load initial orders from REST API
+    pathnameRef.current = pathname;
+  }, [pathname]);
+
+  useEffect(() => {
+    // 1. Cargar órdenes iniciales desde la REST API
     const fetchOrders = async () => {
       try {
         const res = await fetch(`${API_URL}/orders`);
@@ -29,8 +40,8 @@ export const OrdersProvider = ({ children }) => {
     };
     fetchOrders();
 
-    // 2. Connect to Socket.io for real-time updates (Aggressive Reconnection)
-    const socket = io(SOCKET_URL, { 
+    // 2. Conectar a Socket.io para actualizaciones en tiempo real
+    const socket = io(SOCKET_URL, {
       transports: ['websocket'],
       reconnection: true,
       reconnectionAttempts: Infinity,
@@ -42,6 +53,7 @@ export const OrdersProvider = ({ children }) => {
 
     socket.on('connect', () => {
       console.log('[Socket] Conectado al servidor en tiempo real ✅');
+      socket.emit('join_staff_room');
     });
 
     socket.on('disconnect', () => {
@@ -49,48 +61,55 @@ export const OrdersProvider = ({ children }) => {
     });
 
     socket.on('nuevo_pedido', (newOrder) => {
-      console.log('[Socket] Nuevo pedido recibido:', newOrder.id);
-      
-      // Notificación sonora para Cocineros y Admins
-      if (window.location.pathname === '/kitchen' || window.location.pathname === '/admin') {
+      console.log('[Socket] Nuevo pedido POS recibido:', newOrder.id);
+
+      const path = pathnameRef.current;
+      if (path === '/kitchen' || path === '/admin') {
         playNotificationSound();
       }
 
-      setOrders(prev => {
-        // Avoid duplicates if the same client created it
-        const exists = prev.some(o => o.id === newOrder.id);
-        if (exists) return prev;
-        return [newOrder, ...prev];
+      setOrders((prev) => {
+        const exists = prev.some((o) => o.id === newOrder.id);
+        return exists ? prev : [newOrder, ...prev];
+      });
+    });
+
+    socket.on('nuevo_pedido_cliente', (newOrder) => {
+      console.log('[Socket] Nuevo pedido B2C recibido:', newOrder.id);
+
+      if (pathnameRef.current === '/admin') {
+        playNotificationSound();
+      }
+
+      setOrders((prev) => {
+        const exists = prev.some((o) => o.id === newOrder.id);
+        return exists ? prev : [newOrder, ...prev];
       });
     });
 
     socket.on('pedido_actualizado', (updatedOrder) => {
       console.log('[Socket] Pedido actualizado:', updatedOrder.id, '→', updatedOrder.status);
-      
-      // Notificación sonora basada en el rol y el estado
-      if (updatedOrder.status === 'READY' && (window.location.pathname === '/delivery' || window.location.pathname === '/admin')) {
+
+      const path = pathnameRef.current;
+      if (updatedOrder.status === 'READY' && (path === '/delivery' || path === '/admin')) {
         playNotificationSound();
       }
-      if (updatedOrder.status === 'DELIVERED' && window.location.pathname === '/admin') {
+      if (updatedOrder.status === 'DELIVERED' && path === '/admin') {
         playNotificationSound();
       }
 
-      setOrders(prev =>
-        prev.map(order =>
-          order.id === updatedOrder.id
-            ? { ...order, status: updatedOrder.status }
-            : order
+      setOrders((prev) =>
+        prev.map((order) =>
+          order.id === updatedOrder.id ? { ...order, status: updatedOrder.status } : order
         )
       );
     });
 
-    // 🔴 Order permanently deleted → remove from list
     socket.on('pedido_eliminado', ({ id }) => {
       console.log('[Socket] Pedido eliminado permanentemente:', id);
-      setOrders(prev => prev.filter(order => order.id !== id));
+      setOrders((prev) => prev.filter((order) => order.id !== id));
     });
 
-    // Cleanup on unmount
     return () => {
       socket.disconnect();
     };
@@ -102,22 +121,22 @@ export const OrdersProvider = ({ children }) => {
       id: `ord-${Date.now().toString().slice(-4)}`,
       status: 'PENDING',
       timestamp: new Date().toISOString(),
-      cajeroId
+      cajeroId,
     };
 
     try {
       const res = await fetch(`${API_URL}/orders`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newOrder)
+        body: JSON.stringify(newOrder),
       });
       if (!res.ok) {
         console.error('Error al crear pedido en servidor');
-        setOrders(prev => [newOrder, ...prev]);
+        setOrders((prev) => [newOrder, ...prev]);
       }
     } catch (error) {
       console.error('Error creating order:', error);
-      setOrders(prev => [newOrder, ...prev]);
+      setOrders((prev) => [newOrder, ...prev]);
     }
   };
 
@@ -126,7 +145,7 @@ export const OrdersProvider = ({ children }) => {
       const res = await fetch(`${API_URL}/orders/${orderId}/status`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: newStatus, userId })
+        body: JSON.stringify({ status: newStatus, userId }),
       });
       if (!res.ok) {
         console.error('Error al actualizar estado del pedido');
@@ -136,20 +155,12 @@ export const OrdersProvider = ({ children }) => {
     }
   };
 
-  const deleteOrder = (orderId) => {
-    updateOrderStatus(orderId, 'TRASHED');
-  };
-
-  const restoreOrder = (orderId) => {
-    updateOrderStatus(orderId, 'PENDING');
-  };
+  const deleteOrder = (orderId) => updateOrderStatus(orderId, 'TRASHED');
+  const restoreOrder = (orderId) => updateOrderStatus(orderId, 'PENDING');
 
   const permanentlyDeleteOrder = async (orderId) => {
     try {
-      const res = await fetch(`${API_URL}/orders/${orderId}`, {
-        method: 'DELETE'
-      });
-      // Server emits 'pedido_eliminado' via Socket.io
+      const res = await fetch(`${API_URL}/orders/${orderId}`, { method: 'DELETE' });
       if (!res.ok) {
         console.error('Error al eliminar permanentemente');
       }
@@ -159,7 +170,9 @@ export const OrdersProvider = ({ children }) => {
   };
 
   return (
-    <OrdersContext.Provider value={{ orders, addOrder, updateOrderStatus, deleteOrder, restoreOrder, permanentlyDeleteOrder }}>
+    <OrdersContext.Provider
+      value={{ orders, addOrder, updateOrderStatus, deleteOrder, restoreOrder, permanentlyDeleteOrder }}
+    >
       {children}
     </OrdersContext.Provider>
   );

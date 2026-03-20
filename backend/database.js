@@ -48,6 +48,13 @@ export const setupDatabase = async () => {
             cook_id VARCHAR(100) REFERENCES users(id) ON DELETE SET NULL,
             missing_items JSONB NOT NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+          )`,
+          `CREATE TABLE IF NOT EXISTS cash_outflows (
+            id SERIAL PRIMARY KEY,
+            amount DECIMAL(10,2) NOT NULL CHECK (amount > 0),
+            description TEXT NOT NULL,
+            recorded_by VARCHAR(100),
+            created_at TIMESTAMPTZ DEFAULT NOW()
           )`
         ];
 

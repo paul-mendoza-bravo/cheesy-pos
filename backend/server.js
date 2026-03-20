@@ -1,10 +1,12 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import jwt from 'jsonwebtoken';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import { setupDatabase } from './database.js';
 import { createApiRoutes } from './routes/api.js';
+import { createClientRoutes } from './routes/client.js';
 
 dotenv.config();
 
@@ -20,6 +22,7 @@ const sanitizeOrigin = (url) => {
 };
 
 const productionOrigin = sanitizeOrigin(process.env.FRONTEND_URL);
+const clientPortalOrigin = sanitizeOrigin(process.env.CLIENT_FRONTEND_URL);
 
 const corsOptions = {
   origin: function (origin, callback) {
@@ -30,7 +33,7 @@ const corsOptions = {
     // Política de "Reflexión Dinámica" (Dynamic Reflection)
     // Para garantizar el Hito Operativo del jueves frente a colisiones de strings, 
     // validamos entornos locales conocidos o devolvemos dinámicamente el origen entrante.
-    if (!origin || /^https?:\/\/(localhost|127\.0\.0\.1)/.test(origin) || origin === productionOrigin) {
+    if (!origin || /^https?:\/\/(localhost|127\.0\.0\.1)/.test(origin) || origin === productionOrigin || origin === clientPortalOrigin) {
       return callback(null, true);
     }
     
@@ -49,10 +52,33 @@ const io = new Server(httpServer, {
 
 // When a client connects
 io.on('connection', (socket) => {
-  console.log(`[Socket] Cliente conectado: ${socket.id}`);
+  console.log(`[Socket] Conexión: ${socket.id}`);
+
+  // Personal del POS se une al room 'staff' para recibir pedidos de clientes
+  socket.on('join_staff_room', () => {
+    socket.join('staff');
+    console.log(`[Socket] Staff ${socket.id} → room 'staff'`);
+  });
+
+  // Cliente B2C se une a su room privado 'customer_<id>' autenticándose con JWT
+  socket.on('join_customer_room', ({ token } = {}) => {
+    if (!token) return;
+    try {
+      const jwtSecret = process.env.JWT_SECRET || 'dev_secret_key_b2c_123';
+      const decoded = jwt.verify(token, jwtSecret);
+      if (decoded.type === 'customer') {
+        const room = `customer_${decoded.id}`;
+        socket.join(room);
+        socket.data.customerId = decoded.id;
+        console.log(`[Socket] Cliente #${decoded.id} → room '${room}'`);
+      }
+    } catch {
+      socket.emit('auth_error', { message: 'Token inválido para room privado.' });
+    }
+  });
 
   socket.on('disconnect', () => {
-    console.log(`[Socket] Cliente desconectado: ${socket.id}`);
+    console.log(`[Socket] Desconexión: ${socket.id}`);
   });
 });
 
@@ -65,8 +91,11 @@ const init = async () => {
   try {
     await setupDatabase();
 
-    // Pass io into routes so they can emit events
+    // Rutas del POS (staff)
     app.use('/api', createApiRoutes(io));
+
+    // Rutas del portal cliente B2C
+    app.use('/api/client', createClientRoutes(io));
 
     // Endpoint de latidos (Heartbeat) para mitigar Cold Starts en PaaS (Render/Railway)
     app.get('/api/health', (req, res) => {

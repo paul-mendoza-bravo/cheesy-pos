@@ -8,6 +8,9 @@ import {
 
 const STATUS_CONFIG = {
   PENDING: { label: 'Pendiente', color: '#f59e0b', bg: 'rgba(245,158,11,0.15)', icon: Timer },
+  ACCEPTED: { label: 'Aceptado', color: '#10b981', bg: 'rgba(16,185,129,0.15)', icon: CheckCircle2 },
+  REJECTED: { label: 'Rechazado', color: '#ef4444', bg: 'rgba(239,68,68,0.15)', icon: XCircle },
+  COOKING: { label: 'Cocinando', color: '#f97316', bg: 'rgba(249,115,22,0.15)', icon: Package },
   READY: { label: 'Listo', color: '#3b82f6', bg: 'rgba(59,130,246,0.15)', icon: CheckCircle2 },
   DELIVERED: { label: 'Entregado', color: '#22c55e', bg: 'rgba(34,197,94,0.15)', icon: Truck },
   TRASHED: { label: 'Cancelado', color: '#ef4444', bg: 'rgba(239,68,68,0.15)', icon: XCircle },
