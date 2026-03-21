@@ -43,6 +43,7 @@ export const setupDatabase = async () => {
           `ALTER TABLE orders ADD COLUMN IF NOT EXISTS repartidor_id VARCHAR(100) REFERENCES users(id) ON DELETE SET NULL`,
           `ALTER TABLE orders ADD COLUMN IF NOT EXISTS delivery_link TEXT`,
           `ALTER TABLE orders ADD COLUMN IF NOT EXISTS customer_phone VARCHAR(50)`,
+          `ALTER TABLE customers ADD COLUMN IF NOT EXISTS status VARCHAR(50) NOT NULL DEFAULT 'PENDING' CHECK (status IN ('PENDING', 'APPROVED', 'REJECTED'))`,
           `CREATE TABLE IF NOT EXISTS inventory_reports (
             id SERIAL PRIMARY KEY,
             cook_id VARCHAR(100) REFERENCES users(id) ON DELETE SET NULL,

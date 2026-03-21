@@ -147,6 +147,45 @@ export const createApiRoutes = (io) => {
   });
 
   // ==========================================
+  // B2C CUSTOMERS ENDPOINTS (Admin)
+  // ==========================================
+  
+  router.get('/customers', async (req, res) => {
+    try {
+      const result = await pool.query('SELECT id, name, email, phone, status, created_at FROM customers ORDER BY created_at DESC');
+      res.json(result.rows);
+    } catch (error) {
+      console.error('Fetch customers error:', error);
+      res.status(500).json({ error: 'Error fetching customers' });
+    }
+  });
+
+  router.put('/customers/:id/status', async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { status } = req.body;
+      
+      if (!['PENDING', 'APPROVED', 'REJECTED'].includes(status)) {
+        return res.status(400).json({ error: 'Estado inválido' });
+      }
+
+      const result = await pool.query(
+        'UPDATE customers SET status = $1 WHERE id = $2 RETURNING id, name, email, phone, status, created_at',
+        [status, id]
+      );
+
+      if (result.rows.length === 0) {
+        return res.status(404).json({ error: 'Cliente no encontrado' });
+      }
+
+      res.json(result.rows[0]);
+    } catch (error) {
+      console.error('Update customer status error:', error);
+      res.status(500).json({ error: 'Error updating customer status' });
+    }
+  });
+
+  // ==========================================
   // ORDERS ENDPOINTS
   // ==========================================
 

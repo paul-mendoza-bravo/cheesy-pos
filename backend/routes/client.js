@@ -45,7 +45,7 @@ export const createClientRoutes = (io) => {
       const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
 
       const result = await pool.query(
-        'INSERT INTO customers (name, phone, email, password_hash) VALUES ($1, $2, $3, $4) RETURNING id, name, email, phone, created_at',
+        "INSERT INTO customers (name, phone, email, password_hash, status) VALUES ($1, $2, $3, $4, 'PENDING') RETURNING id, name, email, phone, created_at, status",
         [name.trim(), phone?.trim() || null, email.toLowerCase().trim(), passwordHash]
       );
 
@@ -79,7 +79,7 @@ export const createClientRoutes = (io) => {
       }
 
       const result = await pool.query(
-        'SELECT id, name, email, phone, password_hash FROM customers WHERE email = $1',
+        'SELECT id, name, email, phone, password_hash, status FROM customers WHERE email = $1',
         [email.toLowerCase().trim()]
       );
 
@@ -92,6 +92,14 @@ export const createClientRoutes = (io) => {
 
       if (!passwordMatch) {
         return res.status(401).json({ error: 'Credenciales incorrectas.' });
+      }
+
+      if (customer.status === 'PENDING') {
+        return res.status(403).json({ error: 'Tu cuenta está en revisión. Te notificaremos cuando el administrador la apruebe.' });
+      }
+
+      if (customer.status === 'REJECTED') {
+        return res.status(403).json({ error: 'Tu cuenta ha sido rechazada.' });
       }
 
       const token = generateCustomerToken(customer);
