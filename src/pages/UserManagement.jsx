@@ -39,6 +39,7 @@ const MultiRoleSelect = ({ value, onChange }) => {
   const current  = value ? value.split(',').filter(Boolean) : ['ayudante'];
   const [open, setOpen] = useState(false);
   const triggerRef = useRef(null);
+  const dropdownRef = useRef(null);
   const [rect, setRect] = useState(null);
 
   const openDropdown = () => {
@@ -52,7 +53,9 @@ const MultiRoleSelect = ({ value, onChange }) => {
   useEffect(() => {
     if (!open) return;
     const close = (e) => {
-      if (triggerRef.current && !triggerRef.current.contains(e.target)) setOpen(false);
+      const clickedTrigger = triggerRef.current && triggerRef.current.contains(e.target);
+      const clickedDropdown = dropdownRef.current && dropdownRef.current.contains(e.target);
+      if (!clickedTrigger && !clickedDropdown) setOpen(false);
     };
     document.addEventListener('mousedown', close);
     return () => document.removeEventListener('mousedown', close);
@@ -85,6 +88,7 @@ const MultiRoleSelect = ({ value, onChange }) => {
       {/* Portal: el dropdown siempre flota sobre el DOM, nunca clippeado */}
       {open && rect && createPortal(
         <div
+          ref={dropdownRef}
           className="bg-zinc-900 border border-zinc-700 rounded-xl shadow-2xl py-1 z-[9999]"
           style={{
             position:  'fixed',

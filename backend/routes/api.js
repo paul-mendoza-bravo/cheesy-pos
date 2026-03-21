@@ -82,7 +82,7 @@ export const createApiRoutes = (io) => {
   // Update user (Approve or change role)
   router.put('/users/:id', async (req, res) => {
     try {
-      const { id } = req.params;
+      const id = req.params.id.trim().toUpperCase();
       const { role, status } = req.body;
 
       let updateQuery = 'UPDATE users SET ';
