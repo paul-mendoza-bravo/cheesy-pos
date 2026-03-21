@@ -261,6 +261,13 @@ export const createApiRoutes = (io) => {
         return res.status(400).json({ error: 'Estado de orden inválido.' });
       }
 
+      const currentOrderQuery = await client.query('SELECT status FROM orders WHERE id = $1', [id]);
+      if (currentOrderQuery.rows.length === 0) {
+        await client.query('ROLLBACK');
+        return res.status(404).json({ error: 'Orden no encontrada.' });
+      }
+      const oldStatus = currentOrderQuery.rows[0].status;
+
       let updateQuery = 'UPDATE orders SET status = $1';
       const values = [status];
       let paramIdx = 2;
@@ -291,6 +298,31 @@ export const createApiRoutes = (io) => {
         'INSERT INTO order_events (order_id, estado, usuario_id) VALUES ($1, $2, $3)',
         [id, status, userId || null]
       );
+
+      // Deduct inventory if transitioning to DELIVERED
+      if (status === 'DELIVERED' && oldStatus !== 'DELIVERED') {
+        const itemsRes = await client.query('SELECT product_id, quantity, modifiers FROM order_items WHERE order_id = $1', [id]);
+        for (const item of itemsRes.rows) {
+          // Base product deduction
+          await client.query(`
+            UPDATE insumos i
+            SET current_stock = i.current_stock - (r.quantity * $2)
+            FROM recipes r
+            WHERE r.insumo_id = i.id AND r.product_id = $1
+          `, [item.product_id, item.quantity]);
+          
+          // Modifiers deduction
+          const modifiers = item.modifiers ? (typeof item.modifiers === 'string' ? JSON.parse(item.modifiers) : item.modifiers) : [];
+          for (const mod of modifiers) {
+            await client.query(`
+              UPDATE insumos i
+              SET current_stock = i.current_stock - (r.quantity * $2)
+              FROM recipes r
+              WHERE r.insumo_id = i.id AND r.product_id = $1
+            `, [mod.id, item.quantity]);
+          }
+        }
+      }
 
       await client.query('COMMIT');
 
@@ -458,11 +490,11 @@ export const createApiRoutes = (io) => {
   // Refleja el mismo catálogo de client.js y el POS frontend.
   const COST_MAP_SQL = `
     CASE oi.name
-      WHEN 'COMBO MEXA'        THEN 50.50
-      WHEN 'La Mexa'           THEN 32.50
-      WHEN 'La BBQ'            THEN 31.00
-      WHEN 'La Hawaiana'       THEN 30.00
-      WHEN 'Clásica'           THEN 25.00
+      WHEN 'COMBO MEXA'        THEN 63.25
+      WHEN 'La Mexa'           THEN 37.25
+      WHEN 'La BBQ'            THEN 35.75
+      WHEN 'La Hawaiana'       THEN 35.75
+      WHEN 'Clásica'           THEN 29.75
       WHEN 'Papas Especiales'  THEN 26.00
       WHEN 'Papas Sencillas'   THEN 18.00
       ELSE 0
@@ -471,11 +503,11 @@ export const createApiRoutes = (io) => {
 
   const MARGIN_MAP_SQL = `
     CASE oi.name
-      WHEN 'COMBO MEXA'        THEN 89.50
-      WHEN 'La Mexa'           THEN 47.50
-      WHEN 'La BBQ'            THEN 44.00
-      WHEN 'La Hawaiana'       THEN 45.00
-      WHEN 'Clásica'           THEN 40.00
+      WHEN 'COMBO MEXA'        THEN 76.75
+      WHEN 'La Mexa'           THEN 42.75
+      WHEN 'La BBQ'            THEN 39.25
+      WHEN 'La Hawaiana'       THEN 39.25
+      WHEN 'Clásica'           THEN 35.25
       WHEN 'Papas Especiales'  THEN 34.00
       WHEN 'Papas Sencillas'   THEN 17.00
       ELSE 0
@@ -623,6 +655,231 @@ export const createApiRoutes = (io) => {
     } catch (error) {
       console.error('[Cash Outflows GET] Error:', error);
       res.status(500).json({ error: 'Error obteniendo egresos.' });
+    }
+  });
+
+  // ==========================================
+  // INVENTARIO BOM ENDPOINTS
+  // ==========================================
+
+  router.get('/insumos', async (req, res) => {
+    try {
+      const result = await pool.query('SELECT * FROM insumos ORDER BY name ASC');
+      res.json(result.rows.map(r => ({
+        id: r.id,
+        name: r.name,
+        unit: r.unit,
+        currentStock: parseFloat(r.current_stock)
+      })));
+    } catch (error) {
+      console.error('Fetch insumos error:', error);
+      res.status(500).json({ error: 'Error fetching insumos' });
+    }
+  });
+
+  router.post('/insumos', async (req, res) => {
+    try {
+      const { name, unit, currentStock } = req.body;
+      const result = await pool.query(
+        'INSERT INTO insumos (name, unit, current_stock) VALUES ($1, $2, $3) RETURNING *',
+        [name, unit, currentStock || 0]
+      );
+      res.status(201).json({
+        id: result.rows[0].id,
+        name: result.rows[0].name,
+        unit: result.rows[0].unit,
+        currentStock: parseFloat(result.rows[0].current_stock)
+      });
+    } catch (error) {
+      console.error('Create insumo error:', error);
+      res.status(500).json({ error: 'Error creating insumo' });
+    }
+  });
+
+  router.put('/insumos/:id', async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { name, unit, currentStock } = req.body;
+      const result = await pool.query(
+        'UPDATE insumos SET name = $1, unit = $2, current_stock = $3 WHERE id = $4 RETURNING *',
+        [name, unit, currentStock, id]
+      );
+      if (result.rows.length === 0) return res.status(404).json({ error: 'Insumo not found' });
+      res.json({
+        id: result.rows[0].id,
+        name: result.rows[0].name,
+        unit: result.rows[0].unit,
+        currentStock: parseFloat(result.rows[0].current_stock)
+      });
+    } catch (error) {
+      console.error('Update insumo error:', error);
+      res.status(500).json({ error: 'Error updating insumo' });
+    }
+  });
+
+  router.get('/recipes', async (req, res) => {
+    try {
+      const result = await pool.query(`
+        SELECT r.id, r.product_id, r.insumo_id, r.quantity, i.name as insumo_name, i.unit
+        FROM recipes r
+        JOIN insumos i ON r.insumo_id = i.id
+      `);
+      res.json(result.rows.map(r => ({
+        id: r.id,
+        productId: r.product_id,
+        insumoId: r.insumo_id,
+        quantity: parseFloat(r.quantity),
+        insumoName: r.insumo_name,
+        unit: r.unit
+      })));
+    } catch (error) {
+      console.error('Fetch recipes error:', error);
+      res.status(500).json({ error: 'Error fetching recipes' });
+    }
+  });
+
+  router.post('/recipes/:productId', async (req, res) => {
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      const { productId } = req.params;
+      const { ingredients } = req.body; // Array of { insumoId, quantity }
+      
+      // Replace entire recipe
+      await client.query('DELETE FROM recipes WHERE product_id = $1', [productId]);
+      
+      for (const ing of ingredients) {
+        await client.query(
+          'INSERT INTO recipes (product_id, insumo_id, quantity) VALUES ($1, $2, $3)',
+          [productId, ing.insumoId, ing.quantity]
+        );
+      }
+      
+      await client.query('COMMIT');
+      res.json({ success: true });
+    } catch (error) {
+      await client.query('ROLLBACK');
+      console.error('Update recipe error:', error);
+      res.status(500).json({ error: 'Error updating recipe' });
+    } finally {
+      client.release();
+    }
+  });
+
+  router.post('/inventory/bom-reconcile', async (req, res) => {
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      const { inventoryCounts, userId } = req.body; // Array of { insumoId, actualStock, predictedStock }
+      
+      for (const count of inventoryCounts) {
+        const difference = count.actualStock - count.predictedStock;
+        
+        await client.query(
+          'INSERT INTO inventory_counts (insumo_id, predicted_stock, actual_stock, difference, counted_by) VALUES ($1, $2, $3, $4, $5)',
+          [count.insumoId, count.predictedStock, count.actualStock, difference, userId || null]
+        );
+        
+        // Update actual stock
+        await client.query('UPDATE insumos SET current_stock = $1 WHERE id = $2', [count.actualStock, count.insumoId]);
+      }
+      
+      await client.query('COMMIT');
+      res.json({ success: true });
+    } catch (error) {
+      await client.query('ROLLBACK');
+      console.error('Reconcile inventory error:', error);
+      res.status(500).json({ error: 'Error reconciling inventory' });
+    } finally {
+      client.release();
+    }
+  });
+
+  // ==========================================
+  // CIERRE DE CAJA Y REINICIO DE CUENTAS
+  // ==========================================
+  
+  router.post('/reports/close-day', async (req, res) => {
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      
+      // 1. Obtener la información actual (las cuentas)
+      const ordersRes = await client.query('SELECT * FROM orders ORDER BY created_at ASC');
+      // Asegurarse de que hay órdenes por borrar
+      if (ordersRes.rows.length === 0) {
+        await client.query('ROLLBACK');
+        return res.status(400).json({ error: 'No hay cuentas (órdenes) para cerrar y reiniciar.' });
+      }
+
+      const orderItemsRes = await client.query('SELECT * FROM order_items');
+      const orderEventsRes = await client.query('SELECT * FROM order_events');
+      const inventoryReportsRes = await pool.query(`
+        SELECT EXISTS (
+          SELECT FROM information_schema.tables 
+          WHERE table_name = 'inventory_reports'
+        );
+      `);
+      
+      let inventoryReports = [];
+      if (inventoryReportsRes.rows[0].exists) {
+        const invRes = await client.query('SELECT * FROM inventory_reports');
+        inventoryReports = invRes.rows;
+      }
+
+      const cashOutflowsRes = await pool.query(`
+        SELECT EXISTS (
+          SELECT FROM information_schema.tables 
+          WHERE table_name = 'cash_outflows'
+        );
+      `);
+      
+      let cashOutflows = [];
+      if (cashOutflowsRes.rows[0].exists) {
+        const cashRes = await client.query('SELECT * FROM cash_outflows');
+        cashOutflows = cashRes.rows;
+      }
+
+      const firstOrder = ordersRes.rows[0];
+      const lastOrder = ordersRes.rows[ordersRes.rows.length - 1];
+
+      // Formatear fechas: ej. 2026-03-20
+      const minDate = new Date(firstOrder.created_at || firstOrder.createdAt).toISOString().split('T')[0];
+      const maxDate = new Date(lastOrder.created_at || lastOrder.createdAt).toISOString().split('T')[0];
+
+      // 2. Estructurar el JSON
+      const exportData = {
+          dateRange: { start: minDate, end: maxDate },
+          exportedAt: new Date().toISOString(),
+          orders: ordersRes.rows,
+          orderItems: orderItemsRes.rows,
+          orderEvents: orderEventsRes.rows,
+          inventoryReports: inventoryReports,
+          cashOutflows: cashOutflows,
+      };
+
+      // 3. Definir nombre de archivo y Reiniciar las cuentas
+      const fileName = `cuentas_cierre_${minDate}_al_${maxDate}.json`;
+      
+      let truncateTables = ['orders'];
+      if(inventoryReportsRes.rows[0].exists) truncateTables.push('inventory_reports');
+      if(cashOutflowsRes.rows[0].exists) truncateTables.push('cash_outflows');
+
+      await client.query(`TRUNCATE TABLE ${truncateTables.join(', ')} RESTART IDENTITY CASCADE`);
+
+      await client.query('COMMIT');
+
+      // 4. Notificar clientes para recargar la interfaz
+      io.emit('corte_caja_realizado', { message: 'Se han reiniciado las cuentas exitosamente para el día de hoy.' });
+
+      res.json({ success: true, message: 'Cuentas reiniciadas. Descarga iniciada.', fileName, exportData });
+
+    } catch (error) {
+      await client.query('ROLLBACK');
+      console.error('Close day error:', error);
+      res.status(500).json({ error: 'Error al reiniciar las cuentas' });
+    } finally {
+      client.release();
     }
   });
 

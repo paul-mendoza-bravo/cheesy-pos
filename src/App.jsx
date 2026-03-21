@@ -12,6 +12,7 @@ import KitchenView from './pages/KitchenView';
 import DeliveryView from './pages/DeliveryView';
 import AdminDashboard from './pages/AdminDashboard';
 import UserManagement from './pages/UserManagement';
+import InventoryBOMView from './pages/InventoryBOMView';
 import Login from './pages/Login';
 import ClientLogin from './pages/ClientLogin';
 import ClientMenu from './pages/ClientMenu';
@@ -103,6 +104,7 @@ function App() {
 
               <Route element={<StaffRoleGuard allowedRoles={['admin']} />}>
                 <Route path="/admin/users" element={<UserManagement />} />
+                <Route path="/admin/inventory-bom" element={<InventoryBOMView />} />
               </Route>
             </Route>
 

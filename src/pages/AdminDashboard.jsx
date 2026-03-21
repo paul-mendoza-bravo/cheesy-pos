@@ -132,6 +132,7 @@ const AdminDashboard = () => {
   // ── Estado del modal de egresos ──────────────────────────────────────────
   const [showOutflowModal, setShowOutflowModal] = useState(false);
   const [outflowSubmitting, setOutflowSubmitting] = useState(false);
+  const [closingDay, setClosingDay] = useState(false);
 
   // ── Derived values para listas de órdenes ───────────────────────────────
   const activeOrders  = orders.filter(o => o.status !== 'TRASHED');
@@ -227,6 +228,43 @@ const AdminDashboard = () => {
     }
   };
 
+  // ── Handler: cerrar día y reiniciar ──────────────────────────────────────
+  const handleCloseDay = async () => {
+    if (!window.confirm("⚠️ ADVERTENCIA: ¿Estás seguro de que deseas VACIAR y REINICIAR todas las cuentas actuales? Esta acción descargará un respaldo a tu computadora y borrará las órdenes del sistema para empezar de cero.")) {
+      return;
+    }
+    setClosingDay(true);
+    try {
+      const res = await fetch(`${API_BASE}/reports/close-day`, { method: 'POST' });
+      const data = await res.json();
+      if (data.success && data.exportData) {
+        // Trigger file download
+        const blob = new Blob([JSON.stringify(data.exportData, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = data.fileName || 'cuentas_cierre.json';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        alert("✅ " + data.message + "\\n\\nArchivo guardado: " + data.fileName);
+        
+        // Wait briefly for download to start, then reload
+        setTimeout(() => window.location.reload(), 1500);
+      } else {
+        alert("❌ Error: " + (data.error || "Fallo desconocido al intentar generar el archivo."));
+      }
+    } catch (e) {
+      console.error('[CloseDay] Error:', e);
+      alert("❌ Ocurrió un error de red al intentar el cierre.");
+    } finally {
+      // If we are reloading, the component will unmount anyway, but we set it false just in case
+      setClosingDay(false);
+    }
+  };
+
   // ── Handlers de órdenes ──────────────────────────────────────────────────
   const handleDelete = (orderId) => {
     if (window.confirm(`¿Mover la orden #${orderId} a la papelera?`)) deleteOrder(orderId);
@@ -281,6 +319,14 @@ const AdminDashboard = () => {
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <span style={{ fontSize: '14px', color: 'var(--text-muted)' }}>Hola, <strong>{currentUser?.id}</strong></span>
           <div style={{ display: 'flex', gap: '8px' }}>
+            {currentUser?.role === 'admin' && (
+              <button onClick={handleCloseDay} disabled={closingDay} className="btn" style={{ padding: '8px', border: 'none', background: 'rgba(239,68,68,0.1)', color: '#ef4444', borderRadius: '50%', opacity: closingDay ? 0.5 : 1 }} title="Cerrar Día y Reiniciar Cuentas">
+                {closingDay ? <Clock size={16} /> : <ArchiveRestore size={16} />}
+              </button>
+            )}
+            <button onClick={() => navigate('/admin/inventory-bom')} className="btn" style={{ padding: '8px', border: 'none', background: 'var(--bg-container)', color: 'var(--text-main)', borderRadius: '50%' }} title="Inventario BOM">
+              <Beef size={16} />
+            </button>
             <button onClick={() => navigate('/admin/users')} className="btn" style={{ padding: '8px', border: 'none', background: 'var(--bg-container)', color: 'var(--text-main)', borderRadius: '50%' }} title="Administrar Perfiles">
               <Settings size={16} />
             </button>

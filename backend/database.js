@@ -55,6 +55,29 @@ export const setupDatabase = async () => {
             description TEXT NOT NULL,
             recorded_by VARCHAR(100),
             created_at TIMESTAMPTZ DEFAULT NOW()
+          )`,
+          `CREATE TABLE IF NOT EXISTS insumos (
+            id SERIAL PRIMARY KEY,
+            name VARCHAR(100) NOT NULL,
+            unit VARCHAR(20) NOT NULL,
+            current_stock DECIMAL(10,2) DEFAULT 0,
+            created_at TIMESTAMPTZ DEFAULT NOW()
+          )`,
+          `CREATE TABLE IF NOT EXISTS recipes (
+            id SERIAL PRIMARY KEY,
+            product_id VARCHAR(50) NOT NULL,
+            insumo_id INTEGER REFERENCES insumos(id) ON DELETE CASCADE,
+            quantity DECIMAL(10,4) NOT NULL,
+            UNIQUE(product_id, insumo_id)
+          )`,
+          `CREATE TABLE IF NOT EXISTS inventory_counts (
+            id SERIAL PRIMARY KEY,
+            insumo_id INTEGER REFERENCES insumos(id) ON DELETE CASCADE,
+            predicted_stock DECIMAL(10,2) NOT NULL,
+            actual_stock DECIMAL(10,2) NOT NULL,
+            difference DECIMAL(10,2) NOT NULL,
+            counted_by VARCHAR(100) REFERENCES users(id) ON DELETE SET NULL,
+            created_at TIMESTAMPTZ DEFAULT NOW()
           )`
         ];
 
