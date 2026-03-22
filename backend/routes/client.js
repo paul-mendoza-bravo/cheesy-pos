@@ -62,7 +62,11 @@ export const createClientRoutes = (io) => {
       });
     } catch (error) {
       console.error('[Client Register] Error:', error);
-      return res.status(500).json({ error: 'Error interno al registrar cliente.' });
+      // Give more specific error message if it's a known postgres constraint conflict
+      if (error.code === '23505') {
+        return res.status(409).json({ error: 'El correo electrónico o teléfono ya está registrado en nuestra base de datos.' });
+      }
+      return res.status(500).json({ error: 'Error interno al registrar cliente: ' + (error.message || 'Desconocido') });
     }
   });
 

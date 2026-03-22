@@ -7,7 +7,7 @@ import {
   BarChart3, DollarSign, ListOrdered, CheckCircle2, Trash2, ArchiveRestore,
   Users, Check, X, LogOut, Settings, Beef, Calendar, ClipboardList, Package,
   Download, Smartphone, ChefHat, Clock, TrendingUp, TrendingDown, Target,
-  Trophy, ArrowDownCircle, Plus, Receipt, Zap, AlertCircle,
+  Trophy, ArrowDownCircle, Plus, Receipt, Zap, AlertCircle, Megaphone,
 } from 'lucide-react';
 import OrderHistory from '../components/OrderHistory';
 
@@ -374,6 +374,7 @@ const AdminDashboard = () => {
             { key: 'history',       icon: <ClipboardList size={14} />,label: 'Historial',      activeColor: null      },
             { key: 'inventory',     icon: <Package size={14} />,      label: 'Inventarios',    activeColor: null      },
             { key: 'client_orders', icon: <Smartphone size={14} />,   label: 'Online',         activeColor: '#f97316', badge: clientOrders.filter(o => o.status === 'PENDING').length },
+            { key: 'marketing',     icon: <Megaphone size={14} />,    label: 'Marketing (Prompts)', activeColor: '#ec4899' },
             { key: 'trash',         icon: <Trash2 size={14} />,       label: `Papelera (${trashedOrders.length})`, activeColor: null },
           ].map(({ key, icon, label, activeColor, badge }) => (
             <button
@@ -763,6 +764,56 @@ const AdminDashboard = () => {
                 </div>
               );
             })}
+          </div>
+        </div>
+      )}
+
+      {/* ══════════════════════════════════════════════════════════════════ */}
+      {/* TAB: Marketing (Prompts)                                           */}
+      {/* ══════════════════════════════════════════════════════════════════ */}
+      {viewTab === 'marketing' && (
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+            <Megaphone size={20} color="#ec4899" />
+            <h2 style={{ fontSize: '18px', margin: 0 }}>Prompts Publicitarios Diarios</h2>
+          </div>
+          <p style={{ color: 'var(--text-muted)', fontSize: '14px', marginBottom: '24px' }}>
+            Copia y pega estos prompts en ChatGPT o Claude para generar el contenido de hoy para tus redes sociales.
+          </p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '16px' }}>
+            {(() => {
+              const promptsInfo = [
+                { title: 'Post Instagram (Antojo)', text: 'Escribe un post de Instagram (con emojis) promocionando nuestra Cheesy Burger clásica, resaltando que la carne es 100% de res y el queso se derrite en cada mordida. Tono divertido y antojable.' },
+                { title: 'Guion TikTok / Reel', text: 'Crea un guion para un Reel de 15 segundos donde mostramos cómo preparamos nuestra hamburguesa BBQ. El tono debe ser enérgico y terminar con una llamada a la acción para pedir a domicilio.' },
+                { title: 'Mensaje WhatsApp', text: 'Redacta un mensaje de WhatsApp para enviar a nuestros clientes frecuentes. Ofréceles un combo especial de Hamburguesa Hawaiana + Papas usando urgencia (solo válido por hoy). Tono cercano y amigable.' },
+                { title: 'Promo Fin de Semana', text: 'Escribe un caption para Facebook dirigido a familias, promocionando nuestro Combo Mexa para el fin de semana. Resalta que es la opción ideal para no cocinar el domingo.' },
+                { title: 'Story Interactivo', text: 'Diseña un Story interactivo de Instagram (texto e ideas de encuestas) para hacer que los seguidores voten entre la Clásica o la BBQ. Tono competitivo y dinámico para aumentar engagement.' },
+                { title: 'Lanzamiento Secreto', text: 'Redacta un email corto y misterioso para nuestros clientes VIP anunciando que la próxima semana tendremos un nuevo aderezo secreto para las hamburguesas. Tono de exclusividad.' },
+              ];
+              // Elegir 3 basados en el día para variar diariamente
+              const day = new Date().getDate();
+              const startIdx = (day % 2) * 3;
+              const todaysPrompts = promptsInfo.slice(startIdx, startIdx + 3);
+
+              return todaysPrompts.map((p, i) => (
+                <div key={i} className="card" style={{ borderTop: '4px solid #ec4899', position: 'relative' }}>
+                  <h3 style={{ fontSize: '15px', marginTop: 0, marginBottom: '8px', color: '#ec4899' }}>{p.title}</h3>
+                  <textarea 
+                    readOnly 
+                    value={p.text} 
+                    style={{ width: '100%', height: '100px', padding: '12px', borderRadius: '8px', background: 'var(--bg-container)', border: '1px solid var(--border-color)', color: 'var(--text-main)', fontSize: '13px', resize: 'none', boxSizing: 'border-box' }}
+                  />
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '10px' }}>
+                    <button 
+                      className="btn" 
+                      onClick={() => { navigator.clipboard.writeText(p.text); alert('Prompt copiado al portapapeles'); }}
+                      style={{ padding: '6px 14px', background: 'rgba(236,72,153,0.15)', color: '#ec4899', border: 'none', borderRadius: '6px', fontSize: '12px', fontWeight: 'bold' }}>
+                      Copiar Prompt
+                    </button>
+                  </div>
+                </div>
+              ));
+            })()}
           </div>
         </div>
       )}

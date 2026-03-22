@@ -77,9 +77,8 @@ export const OrdersProvider = ({ children }) => {
     socket.on('nuevo_pedido_cliente', (newOrder) => {
       console.log('[Socket] Nuevo pedido B2C recibido:', newOrder.id);
 
-      if (pathnameRef.current === '/admin') {
-        playNotificationSound();
-      }
+      // Reproducir sonido para TODOS los roles (admin, parrillero, repartidor, etc.)
+      playNotificationSound();
 
       setOrders((prev) => {
         const exists = prev.some((o) => o.id === newOrder.id);

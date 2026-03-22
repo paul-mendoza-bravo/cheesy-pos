@@ -4,7 +4,7 @@ import { useCustomerAuth } from '../context/CustomerAuthContext';
 import { io } from 'socket.io-client';
 import { CheckCircle, Clock, ChefHat, Bike, Star, X, RotateCcw } from 'lucide-react';
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || `http://${window.location.hostname}:3001`;
 
 const STATUS_CONFIG = {
   PENDING:   { label: 'Esperando confirmación', icon: Clock,        color: '#f59e0b', step: 0 },
@@ -83,8 +83,24 @@ const ClientOrderStatus = () => {
         </div>
       </div>
 
+      {/* Falling Burgers Animation para PENDING */}
+      {status === 'PENDING' && (
+        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, overflow: 'hidden', pointerEvents: 'none', zIndex: 0 }}>
+          {[...Array(12)].map((_, i) => (
+            <div key={i} className="falling-burger" style={{
+              left: `${Math.random() * 100}%`,
+              animationDuration: `${2.5 + Math.random() * 3}s`,
+              animationDelay: `${Math.random() * 2}s`,
+              fontSize: `${24 + Math.random() * 24}px`
+            }}>
+              🍔
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* Main Status Card */}
-      <div style={{ width: '100%', maxWidth: '480px' }}>
+      <div style={{ width: '100%', maxWidth: '480px', position: 'relative', zIndex: 10 }}>
         <div style={{
           background: 'rgba(255,255,255,0.05)', backdropFilter: 'blur(20px)',
           border: `1px solid ${config.color}40`, borderRadius: '24px', padding: '36px 28px',
@@ -167,6 +183,20 @@ const ClientOrderStatus = () => {
         @keyframes pulse {
           0%, 100% { opacity: 1; }
           50% { opacity: 0.5; }
+        }
+        @keyframes fall {
+          0% { transform: translateY(-10vh) rotate(0deg); opacity: 0; }
+          10% { opacity: 1; }
+          90% { opacity: 1; }
+          100% { transform: translateY(110vh) rotate(360deg); opacity: 0; }
+        }
+        .falling-burger {
+          position: absolute;
+          top: -50px;
+          animation-name: fall;
+          animation-timing-function: linear;
+          animation-iteration-count: infinite;
+          opacity: 0;
         }
       `}</style>
     </div>
