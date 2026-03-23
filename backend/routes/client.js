@@ -32,8 +32,12 @@ export const createClientRoutes = (io) => {
     try {
       const { name, email, phone, password } = req.body;
 
-      if (!name || !email || !password) {
-        return res.status(400).json({ error: 'Nombre, email y contraseña son requeridos.' });
+      if (!name || !email || !password || !phone) {
+        return res.status(400).json({ error: 'Nombre, email, teléfono y contraseña son requeridos.' });
+      }
+      
+      if (phone.trim().length < 10) {
+        return res.status(400).json({ error: 'El número de teléfono debe tener al menos 10 dígitos.' });
       }
 
       // Verificar si el email ya existe
@@ -45,8 +49,8 @@ export const createClientRoutes = (io) => {
       const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
 
       const result = await pool.query(
-        "INSERT INTO customers (name, phone, email, password_hash, status) VALUES ($1, $2, $3, $4, 'PENDING') RETURNING id, name, email, phone, created_at, status",
-        [name.trim(), phone?.trim() || null, email.toLowerCase().trim(), passwordHash]
+        "INSERT INTO customers (name, phone, email, password_hash, status) VALUES ($1, $2, $3, $4, 'APPROVED') RETURNING id, name, email, phone, created_at, status",
+        [name.trim(), phone.trim(), email.toLowerCase().trim(), passwordHash]
       );
 
       const customer = result.rows[0];
@@ -98,9 +102,9 @@ export const createClientRoutes = (io) => {
         return res.status(401).json({ error: 'Credenciales incorrectas.' });
       }
 
-      if (customer.status === 'PENDING') {
-        return res.status(403).json({ error: 'Tu cuenta está en revisión. Te notificaremos cuando el administrador la apruebe.' });
-      }
+      // if (customer.status === 'PENDING') {
+      //   return res.status(403).json({ error: 'Tu cuenta está en revisión. Te notificaremos cuando el administrador la apruebe.' });
+      // }
 
       if (customer.status === 'REJECTED') {
         return res.status(403).json({ error: 'Tu cuenta ha sido rechazada.' });
