@@ -22,7 +22,8 @@ const ClientLogin = () => {
     setError('');
     try {
       if (mode === 'login') {
-        await login(form.email, form.password);
+        if (!form.phone.trim()) { setError('El teléfono es requerido.'); setLoading(false); return; }
+        await login(form.phone, form.password);
       } else {
         if (!form.name.trim()) { setError('El nombre es requerido.'); setLoading(false); return; }
         if (!form.phone.trim() || form.phone.trim().length < 10) { setError('Por motivos de seguridad, requerimos un teléfono válido (al menos 10 dígitos).'); setLoading(false); return; }
@@ -109,10 +110,10 @@ const ClientLogin = () => {
           {mode === 'register' && (
             <>
               <InputField icon={<User size={16} />} name="name" placeholder="Tu nombre completo" value={form.name} onChange={handleChange} />
-              <InputField icon={<Phone size={16} />} name="phone" placeholder="Teléfono celular (obligatorio)" value={form.phone} onChange={handleChange} type="tel" required />
+              <InputField icon={<Mail size={16} />} name="email" placeholder="Correo electrónico" value={form.email} onChange={handleChange} type="email" required />
             </>
           )}
-          <InputField icon={<Mail size={16} />} name="email" placeholder="Correo electrónico" value={form.email} onChange={handleChange} type="email" required />
+          <InputField icon={<Phone size={16} />} name="phone" placeholder={mode === 'login' ? "Tu número celular" : "Teléfono celular (obligatorio)"} value={form.phone} onChange={handleChange} type="tel" required />
           <InputField icon={<Lock size={16} />} name="password" placeholder="Contraseña" value={form.password} onChange={handleChange} type="password" required />
 
           <button type="submit" disabled={loading} style={{

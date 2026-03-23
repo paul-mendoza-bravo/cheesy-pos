@@ -40,10 +40,10 @@ export const createClientRoutes = (io) => {
         return res.status(400).json({ error: 'El número de teléfono debe tener al menos 10 dígitos.' });
       }
 
-      // Verificar si el email ya existe
-      const existing = await pool.query('SELECT id FROM customers WHERE email = $1', [email.toLowerCase().trim()]);
+      // Verificar si el email o teléfono ya existe
+      const existing = await pool.query('SELECT id FROM customers WHERE email = $1 OR phone = $2', [email.toLowerCase().trim(), phone.trim()]);
       if (existing.rows.length > 0) {
-        return res.status(409).json({ error: 'Este correo electrónico ya está registrado.' });
+        return res.status(409).json({ error: 'Este correo electrónico o teléfono ya está registrado.' });
       }
 
       const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
@@ -80,15 +80,15 @@ export const createClientRoutes = (io) => {
   // ==========================================
   router.post('/login', async (req, res) => {
     try {
-      const { email, password } = req.body;
+      const { phone, password } = req.body;
 
-      if (!email || !password) {
-        return res.status(400).json({ error: 'Email y contraseña son requeridos.' });
+      if (!phone || !password) {
+        return res.status(400).json({ error: 'Teléfono y contraseña son requeridos.' });
       }
 
       const result = await pool.query(
-        'SELECT id, name, email, phone, password_hash, status FROM customers WHERE email = $1',
-        [email.toLowerCase().trim()]
+        'SELECT id, name, email, phone, password_hash, status FROM customers WHERE phone = $1',
+        [phone.trim()]
       );
 
       if (result.rows.length === 0) {
@@ -112,7 +112,7 @@ export const createClientRoutes = (io) => {
 
       const token = generateCustomerToken(customer);
 
-      console.log(`[Client Auth] Login exitoso: ${customer.email} (id: ${customer.id})`);
+      console.log(`[Client Auth] Login exitoso: ${customer.name} (tel: ${customer.phone})`);
 
       return res.json({
         success: true,

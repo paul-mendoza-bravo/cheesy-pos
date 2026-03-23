@@ -49,12 +49,12 @@ export const CustomerAuthProvider = ({ children }) => {
     return data;
   };
 
-  const login = async (email, password) => {
+  const login = async (phone, password) => {
     setError(null);
     const res = await fetch(`${BACKEND_URL}/api/client/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ phone, password }),
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Credenciales incorrectas.');
