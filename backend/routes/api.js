@@ -185,6 +185,20 @@ export const createApiRoutes = (io) => {
     }
   });
 
+  router.delete('/customers/:id', async (req, res) => {
+    try {
+      const { id } = req.params;
+      const result = await pool.query('DELETE FROM customers WHERE id = $1 RETURNING id', [id]);
+      if (result.rows.length === 0) {
+        return res.status(404).json({ error: 'Cliente no encontrado' });
+      }
+      res.json({ success: true, message: 'Cliente eliminado permanentemente' });
+    } catch (error) {
+      console.error('Delete customer error:', error);
+      res.status(500).json({ error: 'Error al eliminar cliente' });
+    }
+  });
+
   // ==========================================
   // ORDERS ENDPOINTS
   // ==========================================

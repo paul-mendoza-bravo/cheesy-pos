@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import {
   Users, ArrowLeft, Pencil, Trash2, UserPlus, Search,
-  Shield, ChevronDown, X, Check, AlertCircle,
+  Shield, ChevronDown, X, Check, AlertCircle, Phone, Mail, Lock, Unlock
 } from 'lucide-react';
 
 // ─── Catálogo de roles ────────────────────────────────────────────────────────
@@ -296,10 +296,66 @@ const UserManagement = () => {
   const [editing,   setEditing]   = useState(null); // user object
   const [showAdd,   setShowAdd]   = useState(false);
 
+  const [activeTab, setActiveTab] = useState('staff'); // 'staff' | 'customers'
+  const [customers, setCustomers] = useState([]);
+  const [loadingCustomers, setLoadingCustomers] = useState(false);
+
+  const HOST_URL = import.meta.env.VITE_API_URL || `http://${window.location.hostname}:3001`;
+  const API_URL  = `${HOST_URL}/api`;
+
+  const fetchCustomers = useCallback(async () => {
+    setLoadingCustomers(true);
+    try {
+      const res = await fetch(`${API_URL}/customers`);
+      if (res.ok) {
+        const data = await res.json();
+        setCustomers(data);
+      }
+    } catch(err) { console.error('Error fetching customers', err); }
+    setLoadingCustomers(false);
+  }, [API_URL]);
+
+  useEffect(() => {
+    if (activeTab === 'customers') fetchCustomers();
+  }, [activeTab, fetchCustomers]);
+
   // Filtro de búsqueda
   const filtered = (activeUsers ?? []).filter(u =>
     u.id.toLowerCase().includes(search.toLowerCase())
   );
+
+  const filteredCustomers = customers.filter(c => 
+    c.name.toLowerCase().includes(search.toLowerCase()) || 
+    c.phone?.includes(search) ||
+    c.email.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const handleToggleCustomerStatus = async (customer) => {
+    const nextStatus = customer.status === 'REJECTED' ? 'APPROVED' : 'REJECTED';
+    try {
+      const res = await fetch(`${API_URL}/customers/${customer.id}/status`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: nextStatus })
+      });
+      if (res.ok) {
+        const updated = await res.json();
+        setCustomers(prev => prev.map(c => c.id === updated.id ? updated : c));
+      }
+    } catch(err) { console.error(err); }
+  };
+
+  const handleDeleteCustomer = async (id, name) => {
+    const pwd = window.prompt(`Contraseña SUPERADMIN para eliminar a CLIENTE B2C: ${name}`);
+    if (pwd === '12345') {
+      try {
+        const res = await fetch(`${API_URL}/customers/${id}`, { method: 'DELETE' });
+        if (res.ok) setCustomers(prev => prev.filter(c => c.id !== id));
+      } catch(err) { console.error(err); }
+    } else if (pwd !== null) {
+      alert('Contraseña incorrecta.');
+    }
+  };
 
   const handleSaveRole = (userId, newRole) => {
     updateUserRole(userId, newRole);
@@ -345,12 +401,29 @@ const UserManagement = () => {
             <h1 className="text-xl font-bold text-white">Administrar Perfiles</h1>
           </div>
         </div>
-        <button
-          onClick={() => setShowAdd(true)}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-violet-600 hover:bg-violet-500 text-white text-sm font-semibold transition-colors shadow-lg shadow-violet-900/30"
+        {activeTab === 'staff' && (
+          <button
+            onClick={() => setShowAdd(true)}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-violet-600 hover:bg-violet-500 text-white text-sm font-semibold transition-colors shadow-lg shadow-violet-900/30"
+          >
+            <UserPlus size={15} />
+            Añadir Integrante
+          </button>
+        )}
+      </div>
+
+      <div className="flex gap-2 mb-6 border-b border-zinc-800 pb-[1px]">
+        <button 
+          onClick={() => { setActiveTab('staff'); setSearch(''); }} 
+          className={`px-4 py-2 text-sm font-semibold transition-colors border-b-2 ${activeTab === 'staff' ? 'border-violet-500 text-white' : 'border-transparent text-zinc-500 hover:text-zinc-300'}`}
         >
-          <UserPlus size={15} />
-          Añadir Integrante
+          Personal POS
+        </button>
+        <button 
+          onClick={() => { setActiveTab('customers'); setSearch(''); }} 
+          className={`px-4 py-2 text-sm font-semibold transition-colors border-b-2 ${activeTab === 'customers' ? 'border-violet-500 text-white' : 'border-transparent text-zinc-500 hover:text-zinc-300'}`}
+        >
+          Clientes Directos (B2C)
         </button>
       </div>
 
@@ -361,7 +434,7 @@ const UserManagement = () => {
           type="text"
           value={search}
           onChange={e => setSearch(e.target.value)}
-          placeholder="Buscar por ID de usuario…"
+          placeholder={activeTab === 'staff' ? "Buscar por ID de usuario…" : "Buscar por nombre, teléfono o correo…"}
           className="w-full pl-9 pr-4 py-2.5 rounded-xl bg-zinc-900 border border-zinc-800 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-zinc-600 transition-colors"
         />
         {search && (
@@ -375,8 +448,9 @@ const UserManagement = () => {
       </div>
 
       {/* ── Tabla ── */}
-      <div className="rounded-2xl border border-zinc-800 overflow-hidden">
-        <table className="w-full text-left text-sm border-collapse">
+      {activeTab === 'staff' ? (
+        <div className="rounded-2xl border border-zinc-800 overflow-hidden">
+          <table className="w-full text-left text-sm border-collapse">
           <thead>
             <tr className="bg-zinc-900 border-b border-zinc-800">
               <th className="px-5 py-3.5 text-xs font-semibold text-zinc-500 uppercase tracking-widest">Usuario</th>
@@ -466,6 +540,80 @@ const UserManagement = () => {
           </div>
         )}
       </div>
+      ) : (
+      <div className="rounded-2xl border border-zinc-800 overflow-hidden">
+        <table className="w-full text-left text-sm border-collapse">
+          <thead>
+            <tr className="bg-zinc-900 border-b border-zinc-800">
+              <th className="px-5 py-3.5 text-xs font-semibold text-zinc-500 uppercase tracking-widest">Cliente</th>
+              <th className="px-5 py-3.5 text-xs font-semibold text-zinc-500 uppercase tracking-widest">Contacto</th>
+              <th className="px-5 py-3.5 text-xs font-semibold text-zinc-500 uppercase tracking-widest">Estado</th>
+              <th className="px-5 py-3.5 text-xs font-semibold text-zinc-500 uppercase tracking-widest text-right">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {loadingCustomers ? (
+              <tr><td colSpan={4} className="px-5 py-12 text-center text-zinc-600 text-sm">Cargando clientes...</td></tr>
+            ) : filteredCustomers.length === 0 ? (
+              <tr><td colSpan={4} className="px-5 py-12 text-center text-zinc-600 text-sm">{search ? `Sin resultados para "${search}".` : 'No hay clientes registrados.'}</td></tr>
+            ) : filteredCustomers.map((customer, idx) => {
+              const isLast = idx === filteredCustomers.length - 1;
+              const isBlocked = customer.status === 'REJECTED';
+              return (
+                <tr key={customer.id} className={`bg-zinc-950 hover:bg-zinc-900 transition-colors ${!isLast ? 'border-b border-zinc-800/60' : ''}`}>
+                  <td className="px-5 py-4">
+                    <div className="flex items-center gap-3">
+                      <Avatar name={customer.name} />
+                      <div>
+                        <p className={`font-semibold text-sm ${isBlocked ? 'text-zinc-500 line-through' : 'text-white'}`}>{customer.name}</p>
+                        <p className="text-zinc-500 text-xs mt-0.5">Socio ID: {customer.id}</p>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-5 py-4">
+                    <div className="flex flex-col gap-1 text-xs text-zinc-400">
+                      <span className="flex items-center gap-1.5"><Phone size={12} className="text-zinc-500" /> {customer.phone || 'N/A'}</span>
+                      <span className="flex items-center gap-1.5"><Mail size={12} className="text-zinc-500" /> {customer.email}</span>
+                    </div>
+                  </td>
+                  <td className="px-5 py-4">
+                    {isBlocked ? (
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-500/15 text-rose-400 border border-rose-500/20">
+                        <span className="w-1.5 h-1.5 rounded-full bg-rose-400" /> Bloqueado
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/20">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> Activo
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-5 py-4">
+                    <div className="flex items-center justify-end gap-2">
+                      <button
+                        onClick={() => handleToggleCustomerStatus(customer)}
+                        title={isBlocked ? "Desbloquear cliente" : "Bloquear cliente temporalmente"}
+                        className={`p-2 rounded-lg transition-colors ${isBlocked ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 hover:text-emerald-300' : 'bg-zinc-800 hover:bg-rose-500/20 text-zinc-400 hover:text-rose-400'}`}
+                      >
+                        {isBlocked ? <Unlock size={14} /> : <Lock size={14} />}
+                      </button>
+                      <button onClick={() => handleDeleteCustomer(customer.id, customer.name)} title="Eliminar permanentemente" className="p-2 rounded-lg bg-zinc-800 hover:bg-rose-500/20 text-zinc-400 hover:text-rose-400 transition-colors">
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+        {filteredCustomers.length > 0 && (
+          <div className="px-5 py-3 bg-zinc-900 border-t border-zinc-800 text-xs text-zinc-500">
+            {filteredCustomers.length} {filteredCustomers.length === 1 ? 'cliente' : 'clientes'}
+            {search && ` · filtrando por "${search}"`}
+          </div>
+        )}
+      </div>
+      )}
 
       {/* ── Modales ── */}
       {editing && (
