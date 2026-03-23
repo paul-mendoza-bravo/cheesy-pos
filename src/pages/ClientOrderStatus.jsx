@@ -4,7 +4,7 @@ import { useCustomerAuth } from '../context/CustomerAuthContext';
 import { io } from 'socket.io-client';
 import { CheckCircle, Clock, ChefHat, Bike, Star, X, RotateCcw } from 'lucide-react';
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || `http://${window.location.hostname}:3001`;
+const BACKEND_URL = import.meta.env.VITE_API_URL || `http://${window.location.hostname}:3001`;
 
 const STATUS_CONFIG = {
   PENDING:   { label: 'Esperando confirmación', icon: Clock,        color: '#f59e0b', step: 0 },
