@@ -4,14 +4,12 @@ const INSUMOS = [
   { name: 'Pan de Hamburguesa', unit: 'pieza', cost: 7.08 },
   { name: 'Carne Molida', unit: 'g', cost: 0.15 },
   { name: 'Queso', unit: 'rebanada', cost: 2.50 },
-  { name: 'Queso Suizo', unit: 'rebanada', cost: 3.00 },
   { name: 'Tocino', unit: 'porción', cost: 5.00 },
   { name: 'Cebolla Caramelizada', unit: 'g', cost: 0.03 },
   { name: 'Aguacate', unit: 'porción', cost: 6.25 },
-  { name: 'Vegetales (Lechuga/Tomate)', unit: 'porción', cost: 3.00 },
+  { name: 'Lechuga', unit: 'porción', cost: 3.00 },
   { name: 'Caja Térmica', unit: 'pieza', cost: 2.17 },
   { name: 'Salsa BBQ', unit: 'porción', cost: 2.00 },
-  { name: 'Jamón', unit: 'rebanada', cost: 2.50 },
   { name: 'Piña', unit: 'rebanada', cost: 2.00 },
   { name: 'Porción de Papas', unit: 'porción', cost: 10.00 },
   { name: 'Aceite', unit: 'ml', cost: 0.05 },
@@ -19,9 +17,6 @@ const INSUMOS = [
   { name: 'Rajas', unit: 'porción', cost: 1.50 },
   { name: 'Empaque Papas', unit: 'pieza', cost: 1.50 },
   { name: 'Sal', unit: 'pizca', cost: 0.10 },
-  { name: 'Botella PET 500ml', unit: 'pieza', cost: 3.00 },
-  { name: 'Extracto de Flor de Jamaica', unit: 'ml', cost: 0.20 },
-  { name: 'Azúcar', unit: 'g', cost: 0.02 }
 ];
 
 const RECIPES = [
@@ -32,7 +27,7 @@ const RECIPES = [
   { product_id: 'h2', insumo: 'Tocino', qty: 1 },
   { product_id: 'h2', insumo: 'Cebolla Caramelizada', qty: 30 },
   { product_id: 'h2', insumo: 'Aguacate', qty: 1 },
-  { product_id: 'h2', insumo: 'Vegetales (Lechuga/Tomate)', qty: 1 },
+  { product_id: 'h2', insumo: 'Lechuga', qty: 1 },
   { product_id: 'h2', insumo: 'Caja Térmica', qty: 1 },
 
   // La BBQ - h3
@@ -47,8 +42,7 @@ const RECIPES = [
   // La Hawaiana - h4
   { product_id: 'h4', insumo: 'Pan de Hamburguesa', qty: 1 },
   { product_id: 'h4', insumo: 'Carne Molida', qty: 85 },
-  { product_id: 'h4', insumo: 'Queso Suizo', qty: 1 },
-  { product_id: 'h4', insumo: 'Jamón', qty: 1 },
+  { product_id: 'h4', insumo: 'Queso', qty: 1 },
   { product_id: 'h4', insumo: 'Piña', qty: 1 },
   { product_id: 'h4', insumo: 'Cebolla Caramelizada', qty: 30 },
   { product_id: 'h4', insumo: 'Caja Térmica', qty: 1 },
@@ -58,7 +52,7 @@ const RECIPES = [
   { product_id: 'h1', insumo: 'Carne Molida', qty: 85 },
   { product_id: 'h1', insumo: 'Queso', qty: 1 },
   { product_id: 'h1', insumo: 'Cebolla Caramelizada', qty: 30 },
-  { product_id: 'h1', insumo: 'Vegetales (Lechuga/Tomate)', qty: 1 },
+  { product_id: 'h1', insumo: 'Lechuga', qty: 1 },
   { product_id: 'h1', insumo: 'Caja Térmica', qty: 1 },
 
   // Papas Especiales - s2
@@ -82,7 +76,7 @@ const RECIPES = [
   { product_id: 'c1', insumo: 'Tocino', qty: 2 },
   { product_id: 'c1', insumo: 'Cebolla Caramelizada', qty: 30 },
   { product_id: 'c1', insumo: 'Aguacate', qty: 1 },
-  { product_id: 'c1', insumo: 'Vegetales (Lechuga/Tomate)', qty: 1 },
+  { product_id: 'c1', insumo: 'Lechuga', qty: 1 },
   { product_id: 'c1', insumo: 'Caja Térmica', qty: 1 },
   { product_id: 'c1', insumo: 'Porción de Papas', qty: 1 },
   { product_id: 'c1', insumo: 'Aceite', qty: 50 },
