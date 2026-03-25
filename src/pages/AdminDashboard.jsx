@@ -12,7 +12,7 @@ import {
 import OrderHistory from '../components/OrderHistory';
 
 // ── Constantes de Unit Economics ────────────────────────────────────────────
-const OPEX_DIARIO = 750;
+const OPEX_DIARIO = 500; // Salario de 2 hermanos ($250 c/u)
 const HOST_URL = import.meta.env.VITE_API_URL || `http://${window.location.hostname}:3001`;
 const API_BASE  = `${HOST_URL}/api`;
 
@@ -200,6 +200,27 @@ const AdminDashboard = () => {
   const fcf           = grossProfit - OPEX_DIARIO - dailyOutflowTotal;
   const breakEvenPct  = Math.min((grossProfit / OPEX_DIARIO) * 100, 100);
   const breakEvenGap  = Math.max(OPEX_DIARIO - grossProfit, 0);
+
+  // ── AI Advisor & Predictions ─────────────────────────────────────────────
+  const marginPerBurger = (grossProfit > 0 && burgersSold > 0) ? (grossProfit / burgersSold) : 45;
+  const burgersNeededToBreakEven = Math.ceil(breakEvenGap / marginPerBurger);
+
+  const getAdvisorMessage = () => {
+    if (breakEvenGap > 0) {
+      return {
+        title: "¡Modo Supervivencia! 🚨",
+        desc: `Faltan vender aprox. ${burgersNeededToBreakEven} hamburguesas para cubrir tu sueldo y el de tu hermano ($500).`,
+        action: "Sugerencia: Haz un push en grupos de WhatsApp de la zona ofreciendo 'Envío gratis en la próxima hora'."
+      }
+    } else {
+      return {
+        title: "¡Zona de Ganancias Neta! 💸",
+        desc: `¡Cada hamburguesa extra suma ~$${marginPerBurger.toFixed(2)} directos a la ganancia de la empresa!`,
+        action: "Sugerencia: Ofrece papas especiales a $35 en la compra de cualquier hamburguesa para inflar rápido el ticket promedio."
+      }
+    }
+  };
+  const advisor = getAdvisorMessage();
 
   const breakEvenColor =
     breakEvenPct >= 100 ? '#10b981' :
@@ -479,44 +500,52 @@ const AdminDashboard = () => {
                 </div>
               </div>
 
-              {/* ── Fila 2: Break-Even Tracker ── */}
-              <div className="card" style={{ marginBottom: '16px', border: `1px solid ${breakEvenColor}33` }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <Target size={18} color={breakEvenColor} />
-                    <span style={{ fontSize: '13px', fontWeight: '600' }}>Break-Even Tracker</span>
-                    <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>— Cobertura del OPEX diario</span>
+              {/* ── Fila 2: Break-Even Tracker & AI Advisor ── */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '16px', marginBottom: '16px' }}>
+                <div className="card" style={{ border: `1px solid ${breakEvenColor}33`, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <Target size={18} color={breakEvenColor} />
+                      <span style={{ fontSize: '13px', fontWeight: '600' }}>Break-Even Tracker</span>
+                      <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>— Sueldos de Paul y su hermano</span>
+                    </div>
+                    <span style={{ fontSize: '20px', fontWeight: '800', color: breakEvenColor }}>
+                      {breakEvenPct.toFixed(1)}%
+                    </span>
                   </div>
-                  <span style={{ fontSize: '20px', fontWeight: '800', color: breakEvenColor }}>
-                    {breakEvenPct.toFixed(1)}%
-                  </span>
+
+                  <div style={{ height: '10px', background: 'var(--bg-color)', borderRadius: '99px', overflow: 'hidden', marginBottom: '10px' }}>
+                    <div style={{ height: '100%', width: `${breakEvenPct}%`, background: breakEvenPct >= 100 ? 'linear-gradient(90deg, #10b981, #34d399)' : breakEvenPct >= 50 ? 'linear-gradient(90deg, #f59e0b, #fbbf24)' : 'linear-gradient(90deg, #ef4444, #f87171)', borderRadius: '99px', transition: 'width 0.5s ease' }} />
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: 'var(--text-muted)', marginBottom: '12px' }}>
+                    <span>Utilidad bruta: <strong style={{ color: 'var(--text-main)' }}>{grossProfit.toLocaleString('es-MX', { style: 'currency', currency: 'MXN' })}</strong> / ${OPEX_DIARIO.toLocaleString('es-MX')}</span>
+                    <span style={{ color: breakEvenColor, fontWeight: '700' }}>{breakEvenPct >= 100 ? '✓ Día salvado' : `Faltan ${breakEvenGap.toLocaleString('es-MX', { style: 'currency', currency: 'MXN' })}`}</span>
+                  </div>
+                  
+                  {breakEvenGap > 0 && (
+                    <div style={{ background: 'rgba(245,158,11,0.1)', padding: '10px', borderRadius: '8px', border: '1px solid rgba(245,158,11,0.3)', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <span style={{ fontSize: '20px' }}>🍔</span>
+                      <div style={{ fontSize: '12px', color: 'var(--text-main)', lineHeight: '1.4' }}>
+                        Necesitamos vender aprox. <strong>{burgersNeededToBreakEven} hamburguesas</strong> más para salir tablas hoy.
+                      </div>
+                    </div>
+                  )}
                 </div>
 
-                {/* Barra de progreso */}
-                <div style={{ height: '10px', background: 'var(--bg-color)', borderRadius: '99px', overflow: 'hidden', marginBottom: '10px' }}>
-                  <div style={{
-                    height: '100%',
-                    width: `${breakEvenPct}%`,
-                    background: breakEvenPct >= 100
-                      ? 'linear-gradient(90deg, #10b981, #34d399)'
-                      : breakEvenPct >= 50
-                        ? 'linear-gradient(90deg, #f59e0b, #fbbf24)'
-                        : 'linear-gradient(90deg, #ef4444, #f87171)',
-                    borderRadius: '99px',
-                    transition: 'width 0.5s ease',
-                  }} />
-                </div>
-
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: 'var(--text-muted)' }}>
-                  <span>
-                    Utilidad bruta: <strong style={{ color: 'var(--text-main)' }}>{grossProfit.toLocaleString('es-MX', { style: 'currency', currency: 'MXN' })}</strong> / ${OPEX_DIARIO.toLocaleString('es-MX')}
-                  </span>
-                  <span style={{ color: breakEvenColor, fontWeight: '700' }}>
-                    {breakEvenPct >= 100
-                      ? '✓ Break-even alcanzado'
-                      : `Faltan ${breakEvenGap.toLocaleString('es-MX', { style: 'currency', currency: 'MXN' })}`
-                    }
-                  </span>
+                {/* AI Business Advisor (Wow Feature) */}
+                <div className="card" style={{ background: 'linear-gradient(145deg, var(--bg-container) 0%, rgba(99, 102, 241, 0.05) 100%)', border: '1px solid rgba(99, 102, 241, 0.2)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
+                    <span style={{ fontSize: '18px' }}>🤖</span>
+                    <span style={{ fontSize: '13px', fontWeight: '800', background: 'linear-gradient(90deg, #6366f1, #a855f7)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                      Asesor de Negocio Cheesy
+                    </span>
+                  </div>
+                  <h4 style={{ margin: '0 0 6px', fontSize: '15px', color: 'var(--text-main)' }}>{advisor.title}</h4>
+                  <p style={{ margin: '0 0 12px', fontSize: '13px', color: 'var(--text-muted)' }}>{advisor.desc}</p>
+                  <div style={{ background: 'rgba(99, 102, 241, 0.1)', borderLeft: '3px solid #6366f1', padding: '10px 14px', borderRadius: '4px 8px 8px 4px', fontSize: '12px', fontWeight: '500', color: 'var(--text-main)' }}>
+                    ✨ {advisor.action}
+                  </div>
                 </div>
               </div>
 
