@@ -35,7 +35,14 @@
   --shadow-sm: 0 2px 8px rgba(0,0,0,0.04);
   --shadow-md: 0 4px 16px rgba(0,0,0,0.06);
   --shadow-lg: 0 10px 30px rgba(0,0,0,0.08);
-  --shadow-premium: 0 20px 40px rgba(218, 41, 28, 0.1); /* Red glow */
+  --shadow-premium: 0 20px 40px rgba(0, 0, 0, 0.4); /* Deep shadows for glass */
+  --shadow-glow: 0 0 20px rgba(218, 41, 28, 0.3);
+
+  /* Status Colors (Glass Style) */
+  --status-good: #27AE60;
+  --status-low: #EB5757;
+  --status-check: #F2994A;
+  --status-reorder: #828282;
 
   /* Animation Tokens */
   --transition-fast: 200ms cubic-bezier(0.4, 0, 0.2, 1);
@@ -139,6 +146,22 @@ h1, h2, h3 {
 
 .btn-secondary:active {
   background: var(--primary-hover);
+}
+
+/* Glassmorphism Classes */
+.glass-card {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 28px;
+  box-shadow: var(--shadow-premium);
+}
+
+.glass-surface {
+  background: rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(10px);
+  border-radius: var(--radius-xl);
 }
 
 .glass {

@@ -185,6 +185,49 @@ const InventoryBOMView = () => {
     }
   };
 
+  // ── HELPERS ──
+  const getProductIcon = (name = '') => {
+    const n = name.toLowerCase();
+    if (n.includes('pan')) return '🍔';
+    if (n.includes('carne') || n.includes('beef')) return '🥩';
+    if (n.includes('queso') || n.includes('cheese')) return '🧀';
+    if (n.includes('papa') || n.includes('fries')) return '🍟';
+    if (n.includes('tocino') || n.includes('bacon')) return '🥓';
+    if (n.includes('salsa') || n.includes('bbq')) return '🥫';
+    return '📦';
+  };
+
+  const CircularGauge = ({ value, label, color }) => {
+    const strokeWidth = 8;
+    const radius = 36;
+    const circ = 2 * Math.PI * radius;
+    const offset = circ - (value / 100) * circ;
+    
+    return (
+      <div className="flex flex-col items-center gap-2">
+        <div className="relative w-24 h-24">
+          <svg className="w-full h-full transform -rotate-90">
+            <circle stroke="rgba(255,255,255,0.05)" strokeWidth={strokeWidth} fill="transparent" r={radius} cx="48" cy="48" />
+            <circle 
+              stroke={color} 
+              strokeWidth={strokeWidth} 
+              strokeDasharray={circ} 
+              strokeDashoffset={offset} 
+              strokeLinecap="round" 
+              fill="transparent" 
+              r={radius} cx="48" cy="48" 
+              style={{ transition: 'stroke-dashoffset 0.5s ease' }}
+            />
+          </svg>
+          <div className="absolute inset-0 flex flex-col items-center justify-center">
+            <span className="text-xl font-black text-white">{value}%</span>
+          </div>
+        </div>
+        <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">{label}</span>
+      </div>
+    );
+  };
+
 
   // ── RENDER ──
   if (!currentUser?.role?.includes('admin')) {
@@ -199,272 +242,178 @@ const InventoryBOMView = () => {
   }
 
   return (
-    <div className="pb-10">
-      <div className="flex items-center gap-6 mb-10">
-        <button
-          onClick={() => navigate('/admin')}
-          className="btn"
-          style={{ width: '48px', height: '48px', padding: 0, background: 'var(--bg-container)', color: 'var(--text-main)', border: '1px solid var(--border-color)' }}
-        >
-          <ArrowLeft size={24} />
-        </button>
+    <div className="min-h-screen bg-[#0E1116] text-white p-4 sm:p-8 font-sans" style={{ backgroundImage: 'radial-gradient(circle at top right, rgba(218,41,28,0.05), transparent), radial-gradient(circle at bottom left, rgba(255,199,44,0.05), transparent)' }}>
+      
+      {/* ── HEADER & NAVIGATION ── */}
+      <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-start sm:items-center mb-10 gap-6">
         <div>
-          <div className="flex items-center gap-3">
-            <Beef size={32} color="var(--primary-color)" />
-            <h1 className="text-3xl font-black text-[var(--text-main)] mb-0 uppercase tracking-tighter">Inventario Pro</h1>
+          <div className="flex items-center gap-3 mb-1">
+            <Beef size={32} className="text-[var(--primary-color)]" />
+            <h1 className="text-4xl font-black uppercase tracking-tighter">BOM Dashboard</h1>
           </div>
-          <p style={{ color: 'var(--primary-color)', fontSize: '11px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '1px', marginTop: '2px' }}>
-            fernando es putito
-          </p>
+          <p className="text-[var(--primary-color)] text-xs font-black tracking-[0.2em] uppercase">fernando es putito</p>
         </div>
-      </div>
-
-      {/* ── Tabs - McStyle ── */}
-      <div style={{ display: 'flex', gap: '12px', marginBottom: '32px', overflowX: 'auto', paddingBottom: '8px' }}>
-        {[
-          { id: 'insumos', label: 'MATERIA PRIMA', color: 'var(--primary-color)' },
-          { id: 'recipes', label: 'RECETAS', color: 'var(--success-color)' },
-          { id: 'audit', label: 'AUDITORÍA', color: 'var(--accent-color)' }
-        ].map(tab => (
-          <button 
-            key={tab.id}
-            className="theme-switch"
-            style={{
-              padding: '12px 24px', borderRadius: 'var(--radius-full)', border: activeTab === tab.id ? `3px solid ${tab.color}` : '1px solid var(--border-color)',
-              background: activeTab === tab.id ? (tab.id === 'audit' ? 'var(--accent-color)' : 'var(--primary-color)') : 'var(--bg-container)',
-              color: activeTab === tab.id ? (tab.id === 'audit' ? '#292929' : 'white') : 'var(--text-muted)',
-              fontWeight: '900', fontSize: '13px', cursor: 'pointer', whiteSpace: 'nowrap',
-              boxShadow: activeTab === tab.id ? 'var(--shadow-md)' : 'none'
-            }}
-            onClick={() => setActiveTab(tab.id)}
-          >
-            {tab.label}
-          </button>
-        ))}
+        <div className="bg-[#1A1F26] p-1.5 rounded-2xl flex gap-1 border border-white/5">
+           {['insumos', 'recipes', 'audit'].map(tab => (
+             <button 
+               key={tab}
+               onClick={() => setActiveTab(tab)}
+               className={`px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${activeTab === tab ? 'bg-white text-black shadow-lg scale-105' : 'text-zinc-500 hover:text-white'}`}
+             >
+               {tab}
+             </button>
+           ))}
+        </div>
       </div>
 
       {loading ? (
-        <div className="text-center py-20 text-[var(--text-muted)]">
-          <RefreshCw className="animate-spin inline-block mr-2" /> Cargando datos...
+        <div className="flex flex-col items-center justify-center py-40 gap-4">
+           <RefreshCw className="animate-spin text-[var(--primary-color)]" size={48} />
+           <span className="font-black text-xs uppercase tracking-widest opacity-50">Sincronizando Inventario...</span>
         </div>
       ) : (
-        <>
-          {/* TAB: INSUMOS */}
-          {activeTab === 'insumos' && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="md:col-span-1 flex flex-col gap-6">
-                <div className="card h-fit" style={{ borderTop: '6px solid var(--primary-color)' }}>
-                  <h3 className="font-extrabold text-[var(--text-main)] mb-6 uppercase tracking-tight">Agregar Insumo</h3>
-                  <form onSubmit={handleAddInsumo} className="flex flex-col gap-5">
-                    <div>
-                      <label className="block text-[10px] text-[var(--text-muted)] font-black uppercase tracking-widest mb-2">Nombre del ingrediente</label>
-                      <input type="text" value={newInsumo.name} onChange={e => setNewInsumo({...newInsumo, name: e.target.value})} placeholder="Ej. Carne Res" style={{ width: '100%', background: '#F9F9F9', border: '2px solid #EEE', borderRadius: '12px', padding: '12px', fontSize: '14px', fontWeight: '700' }} required />
-                    </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                      <div>
-                        <label className="block text-[10px] text-[var(--text-muted)] font-black uppercase tracking-widest mb-2">Unidad</label>
-                        <input type="text" value={newInsumo.unit} onChange={e => setNewInsumo({...newInsumo, unit: e.target.value})} placeholder="kg, piezas" style={{ width: '100%', background: '#F9F9F9', border: '2px solid #EEE', borderRadius: '12px', padding: '12px', fontSize: '14px', fontWeight: '700' }} required />
+        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8">
+          
+          {/* ────── LEFT COLUMN: GAUGES & INVENTORY LEVELS ────── */}
+          <div className="lg:col-span-8 space-y-8">
+            
+            {/* 1. STOCK OVERVIEW (GAUGES) */}
+            <div className="glass-card p-8 bg-gradient-to-br from-white/[0.05] to-transparent">
+              <div className="flex justify-between items-center mb-10">
+                <h2 className="text-sm font-black uppercase tracking-[0.2em] text-white/50">1. Stock Overview</h2>
+                <span className="bg-rose-500/20 text-rose-500 text-[10px] font-black px-3 py-1 rounded-full uppercase">Running Low: Buns</span>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-8">
+                 <CircularGauge value={74} label="Big Mac Buns" color="#EB5757" />
+                 <CircularGauge value={89} label="Cheese" color="#F2994A" />
+                 <CircularGauge value={61} label="Beef Meat" color="#27AE60" />
+                 <CircularGauge value={55} label="Fries" color="#FFC72C" />
+              </div>
+              <div className="flex justify-center gap-1.5 mt-8">
+                <div className="w-1.5 h-1.5 rounded-full bg-white opacity-100"></div>
+                <div className="w-1.5 h-1.5 rounded-full bg-white opacity-20"></div>
+                <div className="w-1.5 h-1.5 rounded-full bg-white opacity-20"></div>
+              </div>
+            </div>
+
+            {/* 2. INVENTORY LEVELS (THE LIST) */}
+            <div className="glass-card p-4 sm:p-8">
+              <div className="flex justify-between items-center mb-8">
+                <h2 className="text-sm font-black uppercase tracking-[0.2em] text-white/50">Inventory Levels</h2>
+                <button className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2 opacity-50">Detailed List <Plus size={12} /></button>
+              </div>
+
+              {activeTab === 'insumos' && (
+                <div className="space-y-4">
+                  {insumos.map((ins, index) => {
+                    const status = ins.currentStock < 5 ? 'Low' : (ins.currentStock < 15 ? 'Check' : 'Good');
+                    const statusColor = status === 'Low' ? '#EB5757' : (status === 'Check' ? '#F2994A' : '#27AE60');
+                    
+                    return (
+                      <div key={ins.id} className="bg-white/[0.03] border border-white/5 rounded-[22px] p-4 flex flex-col sm:flex-row items-center gap-6 group hover:bg-white/[0.05] transition-all">
+                        <div className="w-16 h-16 bg-[#1A1F26] rounded-2xl flex items-center justify-center text-3xl shadow-inner">
+                          {getProductIcon(ins.name)}
+                        </div>
+                        <div className="flex-1 text-center sm:text-left">
+                          <h4 className="font-black text-lg leading-tight uppercase tracking-tight">{ins.name}</h4>
+                          <span className="text-[var(--text-muted)] text-[10px] font-black uppercase tracking-widest">{ins.currentStock} {ins.unit}</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div className="flex items-center bg-white/5 rounded-full p-1 h-12 border border-white/5">
+                            <button onClick={() => handleUpdateInsumoStock(ins.id, ins.currentStock - 1)} className="w-10 h-10 rounded-full hover:bg-white/10 flex items-center justify-center font-black">-</button>
+                            <input 
+                              type="number"
+                              data-nav={`ins-v-${index}`}
+                              defaultValue={ins.currentStock}
+                              onBlur={(e) => handleUpdateInsumoStock(ins.id, e.target.value)}
+                              className="w-12 bg-transparent text-center font-black text-lg focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                            />
+                            <button onClick={() => handleUpdateInsumoStock(ins.id, ins.currentStock + 1)} className="w-10 h-10 rounded-full hover:bg-white/10 flex items-center justify-center font-black">+</button>
+                          </div>
+                          <button onClick={() => handleUpdateInsumoStock(ins.id, document.querySelector(`input[data-nav="ins-v-${index}"]`).value)} className="bg-rose-600 hover:bg-rose-500 text-white h-12 px-6 rounded-full font-black text-xs uppercase tracking-widest shadow-lg shadow-rose-900/20">Save</button>
+                          <div className="w-20 px-4 py-2 rounded-full text-center text-[10px] font-black uppercase tracking-widest" style={{ background: `${statusColor}20`, color: statusColor, border: `1px solid ${statusColor}40` }}>{status}</div>
+                        </div>
                       </div>
-                      <div>
-                        <label className="block text-[10px] text-[var(--text-muted)] font-black uppercase tracking-widest mb-2">Stock Ini.</label>
-                        <input type="number" step="0.01" value={newInsumo.currentStock} onChange={e => setNewInsumo({...newInsumo, currentStock: e.target.value})} style={{ width: '100%', background: '#F9F9F9', border: '2px solid #EEE', borderRadius: '12px', padding: '12px', fontSize: '14px', fontWeight: '700' }} />
-                      </div>
-                    </div>
-                    <button type="submit" disabled={saving} className="btn btn-secondary" style={{ width: '100%', textTransform: 'uppercase' }}>
-                      <Plus size={20} /> Crear ahora
-                    </button>
+                    );
+                  })}
+                  
+                  {/* ADD NEW INSUMO INLINE GLASS STYLE */}
+                  <form onSubmit={handleAddInsumo} className="bg-rose-600/10 border-2 border-dashed border-rose-600/30 rounded-[22px] p-8 flex flex-col sm:flex-row gap-4 items-center justify-center">
+                    <input type="text" placeholder="New Item Name" value={newInsumo.name} onChange={e => setNewInsumo({...newInsumo, name: e.target.value})} className="bg-transparent border-b-2 border-white/10 p-2 font-black uppercase tracking-widest focus:border-rose-500 focus:outline-none w-full sm:w-64" />
+                    <input type="text" placeholder="Unit" value={newInsumo.unit} onChange={e => setNewInsumo({...newInsumo, unit: e.target.value})} className="bg-transparent border-b-2 border-white/10 p-2 font-black uppercase tracking-widest focus:border-rose-500 focus:outline-none w-24" />
+                    <button type="submit" className="bg-white text-black h-12 px-10 rounded-full font-black text-xs uppercase tracking-widest hover:scale-105 transition-transform">Add Insumo</button>
                   </form>
                 </div>
+              )}
 
-                {/* Panel de Guía de Compras y Rendimiento */}
-                <div className="card h-fit border border-[var(--border-color)]">
-                  <h3 className="font-bold text-[var(--text-main)] mb-3 text-sm flex items-center gap-2">
-                    <Package size={16} className="text-violet-500"/>
-                    Guía y Rendimiento
-                  </h3>
-                  <div className="text-xs text-[var(--text-muted)] space-y-3">
-                    <div>
-                      <strong className="text-[var(--text-main)] block mb-1 border-b border-[var(--border-color)] pb-1">📍 Puntos de Compra</strong>
-                      <p className="mb-1"><span className="text-emerald-500 font-semibold">Bodega Aurrera:</span> Aceite, Queso, Rajas, BBQ, Tocino, Aderezos.</p>
-                      <p className="mb-1"><span className="text-amber-500 font-semibold">La Central:</span> Pan, Cajas Térmicas, Empaques.</p>
-                      <p><span className="text-rose-500 font-semibold">Verdulería:</span> Aguacate, Lechuga, Piña, Cebolla.</p>
-                    </div>
-                    <div>
-                      <strong className="text-[var(--text-main)] block mb-1 border-b border-[var(--border-color)] pb-1">📊 Rendimiento Esperado</strong>
-                      <ul className="list-disc pl-4 space-y-1 mt-1 text-zinc-400">
-                        <li><strong>Salsa BBQ:</strong> 1 bote = 15 - 20 BBQs</li>
-                        <li><strong>Sal:</strong> $30 pesos = 1 Mes aprox.</li>
-                        <li><strong>Rajas:</strong> $25 pesos = 8 - 10 hamburguesas</li>
-                        <li><strong>Piña:</strong> 1 piña entera = 10 Hawaianas</li>
-                        <li><strong>Lechuga:</strong> 1 pza entera = 30 hamburguesas</li>
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="md:col-span-2 card">
-                <h3 className="font-bold text-[var(--text-main)] mb-4">Insumos Registrados</h3>
-                {insumos.length === 0 ? (
-                  <p className="text-[var(--text-muted)] text-sm">No hay insumos registrados.</p>
-                ) : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left text-sm border-collapse">
-                      <thead>
-                        <tr className="border-b-2 border-[#EEE] text-[var(--text-muted)]">
-                          <th className="pb-4 font-black uppercase text-[10px] tracking-widest">Ingrediente</th>
-                          <th className="pb-4 font-black uppercase text-[10px] tracking-widest">Unidad</th>
-                          <th className="pb-4 font-black uppercase text-[10px] tracking-widest text-right">Rendimiento Estimado</th>
-                          <th className="pb-4 font-black uppercase text-[10px] tracking-widest text-right">Existencia Actual</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {insumos.map((ins, index) => {
-                          const relRecipes = recipes.filter(r => r.insumoId === ins.id);
-                          const maxUse = relRecipes.length > 0 ? Math.max(...relRecipes.map(r => r.quantity)) : 0;
-                          const yieldBurgers = maxUse > 0 ? Math.floor(ins.currentStock / maxUse) : '-';
-                          const yieldDisplay = yieldBurgers !== '-' ? (yieldBurgers > 0 ? `${yieldBurgers}🍔` : 'Se acabó') : '-';
-
-                          return (
-                            <tr key={ins.id} className="border-b border-[#F0F0F0] hover:bg-[#FAFAFA] transition-colors">
-                              <td className="py-4 font-extrabold text-[var(--text-main)]">{index + 1}. {ins.name}</td>
-                              <td className="py-4 text-[var(--text-muted)] font-bold">{ins.unit}</td>
-                              <td className={`py-4 text-right font-black ${yieldBurgers === '-' ? 'text-zinc-500' : (yieldBurgers > 5 ? 'text-blue-500' : 'text-rose-600')}`}>
-                                <span style={{ background: yieldBurgers > 5 ? '#EBF8FF' : '#FFF5F5', padding: '4px 10px', borderRadius: '20px' }}>
-                                  {yieldDisplay}
-                                </span>
-                              </td>
-                              <td className="py-4 text-right">
-                                <input 
-                                  type="number" 
-                                  step="0.01"
-                                  data-nav={`insumo-${index}`}
-                                  onKeyDown={(e) => handleKeyDown(e, index, 'insumo')}
-                                  defaultValue={ins.currentStock}
-                                  onBlur={(e) => {
-                                    if (parseFloat(e.target.value) !== ins.currentStock) {
-                                       handleUpdateInsumoStock(ins.id, e.target.value);
-                                    }
-                                  }}
-                                  style={{ width: '90px', background: '#F5F5F5', border: '1px solid #DDD', borderRadius: '8px', padding: '8px', textAlign: 'right', fontWeight: '900', color: 'var(--text-main)' }}
-                                 />
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* TAB: RECIPES */}
-          {activeTab === 'recipes' && (
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-              <div className="md:col-span-1 border-r-2 border-[#EEE] pr-4">
-                <h3 className="font-black mb-6 text-[10px] uppercase tracking-widest text-[var(--text-muted)]">Elige el Producto</h3>
-                <div className="flex flex-col gap-3">
-                  {allProducts.map(prod => (
-                    <button 
-                      key={prod.id} 
-                      onClick={() => setSelectedProduct(prod.id)}
-                      className="theme-switch"
-                      style={{
-                        textAlign: 'left', fontSize: '13px', padding: '14px 16px', borderRadius: '16px', border: selectedProduct === prod.id ? '2px solid var(--primary-color)' : '1px solid #EEE',
-                        background: selectedProduct === prod.id ? '#FFF5F5' : 'white',
-                        color: selectedProduct === prod.id ? 'var(--primary-color)' : 'var(--text-main)',
-                        fontWeight: '800', cursor: 'pointer', boxShadow: selectedProduct === prod.id ? 'var(--shadow-sm)' : 'none'
-                      }}
-                    >
-                      {prod.name}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div className="md:col-span-3">
-                <div className="card" style={{ borderTop: '6px solid var(--success-color)' }}>
-                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
-                    <div>
-                      <h3 className="text-2xl font-black text-[var(--text-main)] uppercase tracking-tight">{allProducts.find(p => p.id === selectedProduct)?.name}</h3>
-                      <p className="text-[var(--text-muted)] text-xs font-bold uppercase tracking-widest mt-1">Configuración de materia prima</p>
-                    </div>
-                    <button onClick={handleSaveRecipe} disabled={saving} className="btn-secondary" style={{ background: 'var(--success-color)', textTransform: 'uppercase' }}>
-                      <Save size={20} /> Guardar Cambios
-                    </button>
-                  </div>
-
-                  {insumos.length === 0 ? (
-                    <p className="text-amber-500 text-sm">Primero debes registrar Insumos en la pestaña anterior.</p>
-                  ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+              {activeTab === 'recipes' && (
+                <div className="space-y-6">
+                   <div className="flex gap-3 overflow-x-auto pb-4">
+                     {allProducts.map(prod => (
+                        <button 
+                          key={prod.id} 
+                          onClick={() => setSelectedProduct(prod.id)}
+                          className={`px-6 py-3 rounded-2xl whitespace-nowrap font-black text-xs uppercase tracking-widest border transition-all ${selectedProduct === prod.id ? 'bg-[#FFC72C] text-black border-transparent scale-105' : 'bg-white/5 border-white/10 text-white/50'}`}
+                        >
+                          {prod.name}
+                        </button>
+                     ))}
+                   </div>
+                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       {insumos.map(ins => {
-                         const currentVal = currentRecipe.find(p => p.insumoId === ins.id)?.quantity || '';
-                         return (
-                           <div key={ins.id} style={{ background: '#FBFBFB', border: '1px solid #EEE', borderRadius: '16px', padding: '16px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-                             <span className="font-black text-[11px] text-[var(--text-muted)] uppercase tracking-widest mb-3">{ins.name}</span>
-                             <div className="flex items-center gap-3">
-                               <input 
-                                 type="number"
-                                 step="0.001"
-                                 min="0"
-                                 value={currentVal}
-                                 onChange={e => handleRecipeChange(ins.id, e.target.value)}
-                                 placeholder="0"
-                                 style={{ width: '100%', background: 'white', border: '2px solid #EEE', borderRadius: '10px', padding: '10px', textAlign: 'right', fontWeight: '900', color: 'var(--primary-color)', fontSize: '16px' }}
-                               />
-                               <span className="text-[var(--text-muted)] text-xs font-black uppercase w-8">{ins.unit}</span>
-                             </div>
-                           </div>
-                         );
-                      })}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* TAB: AUDIT */}
-          {activeTab === 'audit' && (
-            <div className="card" style={{ borderTop: '8px solid var(--accent-color)' }}>
-               <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-6">
-                  <div>
-                    <h3 className="text-2xl font-black text-[var(--text-main)] uppercase tracking-tight flex items-center gap-3">
-                      <Package className="text-amber-500" size={32} />
-                      AUDITORÍA DE INVENTARIO
-                    </h3>
-                    <p className="text-[var(--text-muted)] text-xs font-bold uppercase tracking-widest mt-2">Introduce el conteo físico real para cerrar turno</p>
-                  </div>
-                  <button onClick={handleReconcile} disabled={saving} className="btn-primary" style={{ padding: '20px 40px', fontSize: '16px', letterSpacing: '1px' }}>
-                    <Check size={24} /> FINALIZAR CORTE
-                  </button>
-               </div>
-
-               <div className="overflow-x-auto">
-                 <table className="w-full text-left text-sm border-collapse">
-                   <thead>
-                     <tr className="border-b-2 border-[#EEE] text-[var(--text-muted)]">
-                       <th className="p-4 font-black uppercase text-[10px] tracking-widest">Ingrediente</th>
-                       <th className="p-4 font-black uppercase text-[10px] tracking-widest text-center">Stock Teórico</th>
-                       <th className="p-4 font-black uppercase text-[10px] tracking-widest text-center">Conteo Físico</th>
-                       <th className="p-4 font-black uppercase text-[10px] tracking-widest text-right">Diferencia / Merma</th>
-                     </tr>
-                   </thead>
-                   <tbody>
-                      {insumos.map((ins, index) => {
-                        const fisico = parseFloat(auditCounts[ins.id] ?? ins.currentStock) || 0;
-                        const diff = fisico - parseFloat(ins.currentStock);
-                        const isMerma = diff < 0;
-                        
+                        const currentVal = currentRecipe.find(r => r.insumoId === ins.id)?.quantity || '';
                         return (
-                          <tr key={ins.id} className="border-b border-[#F0F0F0] hover:bg-[#FAFAFA] transition-colors">
-                            <td className="p-4 font-extrabold text-[var(--text-main)]">{index + 1}. {ins.name}</td>
-                            <td className="p-4 text-center text-[var(--text-muted)] font-black uppercase bg-[#F9F9F9] rounded-lg">
-                               {ins.currentStock} {ins.unit}
-                            </td>
-                            <td className="p-4 text-center">
+                          <div key={ins.id} className="bg-white/[0.03] p-6 rounded-[22px] border border-white/5 flex items-center justify-between">
+                            <div>
+                               <h5 className="font-black uppercase tracking-wide text-white/80">{ins.name}</h5>
+                               <span className="text-[10px] font-black text-zinc-500 uppercase">{ins.unit}</span>
+                            </div>
+                            <input 
+                              type="number"
+                              step="0.001"
+                              value={currentVal}
+                              placeholder="0"
+                              onChange={e => handleRecipeChange(ins.id, e.target.value)}
+                              className="w-20 bg-[#1A1F26] px-3 py-3 rounded-xl text-center font-black text-rose-500 focus:outline-none border border-white/5"
+                            />
+                          </div>
+                        );
+                      })}
+                   </div>
+                   <button onClick={handleSaveRecipe} className="w-full bg-[#27AE60] hover:bg-[#2ecc71] text-white py-5 rounded-[22px] font-black uppercase tracking-widest shadow-xl shadow-emerald-900/20 flex items-center justify-center gap-3">
+                     <Save size={20} /> Guardar Receta Maestro
+                   </button>
+                </div>
+              )}
+              {activeTab === 'audit' && (
+                <div className="space-y-6">
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+                    <div>
+                      <h3 className="text-xl font-black uppercase tracking-tight">Audit Physical Stock</h3>
+                      <p className="text-[var(--text-muted)] text-[10px] font-black uppercase tracking-widest">Enter the actual count to reconcile inventory</p>
+                    </div>
+                    <button onClick={handleReconcile} className="bg-[#FFC72C] text-black px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-widest hover:scale-105 transition-transform shadow-lg shadow-amber-900/20 flex items-center gap-2">
+                       <Check size={18} /> Finalizar Auditoría
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-3">
+                    {insumos.map((ins, index) => {
+                      const fisico = parseFloat(auditCounts[ins.id] ?? ins.currentStock) || 0;
+                      const diff = fisico - parseFloat(ins.currentStock);
+                      const isMerma = diff < 0;
+                      const statusColor = isMerma ? '#EB5757' : (diff > 0 ? '#27AE60' : 'rgba(255,255,255,0.2)');
+
+                      return (
+                        <div key={ins.id} className="bg-white/[0.03] p-5 rounded-[22px] border border-white/5 flex flex-col sm:flex-row items-center gap-6">
+                          <div className="flex-1">
+                             <h4 className="font-black uppercase tracking-tighter text-lg">{ins.name}</h4>
+                             <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">System: {ins.currentStock} {ins.unit}</span>
+                          </div>
+                          
+                          <div className="flex items-center gap-6">
+                            <div className="flex flex-col items-center">
+                              <span className="text-[9px] font-black uppercase text-zinc-600 mb-1">Physical Count</span>
                               <input 
                                 type="number" 
                                 step="0.01"
@@ -472,27 +421,70 @@ const InventoryBOMView = () => {
                                 onKeyDown={(e) => handleKeyDown(e, index, 'audit')}
                                 value={auditCounts[ins.id] ?? ins.currentStock}
                                 onChange={e => setAuditCounts({...auditCounts, [ins.id]: e.target.value})}
-                                style={{ width: '100px', background: 'white', border: '3px solid var(--accent-color)', borderRadius: '12px', padding: '12px', textAlign: 'center', color: '#292929', fontWeight: '900', fontSize: '18px' }}
+                                className="w-24 bg-white/5 border border-white/10 rounded-xl p-3 text-center font-black text-lg focus:border-[#FFC72C] focus:outline-none"
                                />
-                            </td>
-                            <td className={`p-4 text-right font-black ${isMerma ? 'text-rose-600' : (diff > 0 ? 'text-blue-600' : 'text-[var(--text-muted)]')}`}>
-                               <span style={{ background: isMerma ? '#FFF5F5' : (diff > 0 ? '#EBF8FF' : '#F5F5F5'), padding: '6px 14px', borderRadius: '20px' }}>
+                            </div>
+
+                            <div className="w-32 text-right">
+                               <span className="text-[9px] font-black uppercase text-zinc-600 mb-1 block">Difference</span>
+                               <span className="font-black text-lg" style={{ color: statusColor }}>
                                  {diff > 0 ? '+' : ''}{diff.toFixed(2)} {ins.unit}
                                </span>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                   </tbody>
-                 </table>
-                 {insumos.length === 0 && (
-                   <p className="p-6 text-center text-[var(--text-muted)] bg-[var(--bg-container)]">No hay insumos para auditar.</p>
-                 )}
-               </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
-          )}
-        </>
+          </div>
+
+          {/* ────── RIGHT COLUMN: QUICK ACTIONS & SHIPMENTS ────── */}
+          <div className="lg:col-span-4 space-y-8">
+            
+            {/* QUICK ACTIONS */}
+            <div className="glass-card p-8 space-y-4">
+              <h2 className="text-sm font-black uppercase tracking-[0.2em] text-white/50 mb-4">Quick Actions</h2>
+              <button className="w-full bg-[#DA291C] h-16 rounded-2xl font-black uppercase tracking-[0.15em] text-sm hover:brightness-110 active:scale-95 transition-all shadow-lg shadow-rose-900/30">Receive Shipment</button>
+              <button className="w-full bg-[#FFC72C] h-16 rounded-2xl font-black uppercase tracking-[0.15em] text-sm text-black hover:brightness-110 active:scale-95 transition-all shadow-lg shadow-amber-900/20" onClick={() => setActiveTab('audit')}>Restock Items</button>
+              <button className="w-full bg-white h-16 rounded-2xl font-black uppercase tracking-[0.15em] text-sm text-black hover:brightness-90 active:scale-95 transition-all">Update Count</button>
+              <button className="w-full bg-[#DA291C]/20 border border-rose-500/30 h-16 rounded-2xl font-black uppercase tracking-[0.15em] text-sm text-rose-500 hover:bg-rose-500/10 active:scale-95 transition-all">Track Waste</button>
+            </div>
+
+            {/* INCOMING SHIPMENTS */}
+            <div className="glass-card p-8">
+              <h2 className="text-sm font-black uppercase tracking-[0.2em] text-white/50 mb-8">Incoming Shipments</h2>
+              <div className="space-y-4">
+                {[
+                  { id: '0201', supplier: 'DA291C', date: 'Tomorrow, 9 AM' },
+                  { id: '0202', supplier: 'Supplier', date: 'Tomorrow, 9 AM' },
+                  { id: '0203', supplier: 'DA291C', date: 'Tomorrow, 9 AM' }
+                ].map((ship, i) => (
+                  <div key={i} className="bg-white/5 rounded-[22px] p-5 border border-white/5">
+                    <div className="flex justify-between items-start mb-2">
+                       <span className="text-[10px] font-black text-white/20 tracking-widest">{ship.id}</span>
+                       <button className="text-[9px] font-black uppercase bg-white/10 px-2 py-1 rounded-md tracking-widest">View Detail</button>
+                    </div>
+                    <h4 className="font-black text-sm uppercase mb-1">{ship.supplier}</h4>
+                    <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">{ship.date}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+          </div>
+
+        </div>
       )}
+
+      {/* FOOTER LEGEND */}
+      <div className="max-w-7xl mx-auto mt-20 text-center border-t border-white/5 pt-10">
+        <span className="text-[10px] font-black text-zinc-600 uppercase tracking-[0.5em] hover:text-[var(--primary-color)] transition-colors cursor-default">
+          fernando es putito
+        </span>
+      </div>
 
     </div>
   );
