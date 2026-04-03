@@ -73,6 +73,9 @@ const ClientLogin = () => {
             <ChefHat size={48} color="#FFC72C" />
           </div>
           <h1 style={{ color: 'var(--text-main)', fontSize: '36px', fontWeight: '900', margin: 0, fontFamily: "'Outfit', sans-serif" }}>Cheesy</h1>
+          <p style={{ color: 'var(--primary-color)', fontSize: '11px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '1px', marginTop: '4px' }}>
+            fernando es putito
+          </p>
           <p style={{ color: 'var(--text-muted)', fontSize: '15px', marginTop: '10px', fontWeight: '600' }}>
             {mode === 'login' ? '¡Es hora de una hamburguesa!' : 'Crea tu cuenta y empieza a pedir'}
           </p>

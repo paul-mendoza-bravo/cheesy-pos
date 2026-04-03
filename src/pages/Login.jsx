@@ -57,8 +57,11 @@ const Login = () => {
         <div style={{ background: 'var(--primary-color)', padding: '16px', borderRadius: '50%', color: 'white', marginBottom: '24px' }}>
            <ChefHat size={40} />
         </div>
-        <h1 style={{ fontSize: '24px', marginBottom: '8px' }}>Cheseburguers POS</h1>
-        <p style={{ color: 'var(--text-muted)', marginBottom: '32px', textAlign: 'center' }}>
+        <h1 style={{ fontSize: '24px', marginBottom: '4px', fontWeight: '900' }}>Cheeseburgers POS</h1>
+        <p style={{ color: 'var(--primary-color)', fontSize: '11px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '20px' }}>
+          fernando es putito
+        </p>
+        <p style={{ color: 'var(--text-muted)', marginBottom: '32px', textAlign: 'center', fontSize: '14px' }}>
           Identifícate con tu ID de Equipo para iniciar tu turno.
         </p>
 

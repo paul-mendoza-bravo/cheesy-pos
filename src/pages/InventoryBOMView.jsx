@@ -200,43 +200,47 @@ const InventoryBOMView = () => {
 
   return (
     <div className="pb-10">
-      {/* ── Header ── */}
-      <div className="flex items-center gap-4 mb-8">
+      <div className="flex items-center gap-6 mb-10">
         <button
           onClick={() => navigate('/admin')}
-          className="p-2 rounded-xl bg-[var(--bg-container)] hover:opacity-80 text-[var(--text-muted)] transition-colors border border-[var(--border-color)]"
+          className="btn"
+          style={{ width: '48px', height: '48px', padding: 0, background: 'var(--bg-container)', color: 'var(--text-main)', border: '1px solid var(--border-color)' }}
         >
-          <ArrowLeft size={20} />
+          <ArrowLeft size={24} />
         </button>
         <div>
-          <div className="flex items-center gap-2 text-violet-500 mb-1">
-            <Beef size={24} />
-            <h1 className="text-2xl font-bold text-[var(--text-main)] mb-0">Inventario Inteligente</h1>
+          <div className="flex items-center gap-3">
+            <Beef size={32} color="var(--primary-color)" />
+            <h1 className="text-3xl font-black text-[var(--text-main)] mb-0 uppercase tracking-tighter">Inventario Pro</h1>
           </div>
-          <p className="text-[var(--text-muted)] text-sm m-0">Control de insumos, recetas y auditoría (BOM)</p>
+          <p style={{ color: 'var(--primary-color)', fontSize: '11px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '1px', marginTop: '2px' }}>
+            fernando es putito
+          </p>
         </div>
       </div>
 
-      {/* ── Tabs ── */}
-      <div className="flex gap-2 mb-6 border-b border-[var(--border-color)] pb-2">
-        <button 
-          className={`px-4 py-2 font-semibold text-sm rounded-t-lg transition-colors ${activeTab === 'insumos' ? 'text-violet-500 border-b-2 border-violet-500' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}
-          onClick={() => setActiveTab('insumos')}
-        >
-          Insumos (Materia Prima)
-        </button>
-        <button 
-          className={`px-4 py-2 font-semibold text-sm rounded-t-lg transition-colors ${activeTab === 'recipes' ? 'text-emerald-500 border-b-2 border-emerald-500' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}
-          onClick={() => setActiveTab('recipes')}
-        >
-          Recetas de Productos
-        </button>
-        <button 
-          className={`px-4 py-2 font-semibold text-sm rounded-t-lg transition-colors ${activeTab === 'audit' ? 'text-amber-500 border-b-2 border-amber-500' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}
-          onClick={() => setActiveTab('audit')}
-        >
-          Auditoría de Turno
-        </button>
+      {/* ── Tabs - McStyle ── */}
+      <div style={{ display: 'flex', gap: '12px', marginBottom: '32px', overflowX: 'auto', paddingBottom: '8px' }}>
+        {[
+          { id: 'insumos', label: 'MATERIA PRIMA', color: 'var(--primary-color)' },
+          { id: 'recipes', label: 'RECETAS', color: 'var(--success-color)' },
+          { id: 'audit', label: 'AUDITORÍA', color: 'var(--accent-color)' }
+        ].map(tab => (
+          <button 
+            key={tab.id}
+            className="theme-switch"
+            style={{
+              padding: '12px 24px', borderRadius: 'var(--radius-full)', border: activeTab === tab.id ? `3px solid ${tab.color}` : '1px solid var(--border-color)',
+              background: activeTab === tab.id ? (tab.id === 'audit' ? 'var(--accent-color)' : 'var(--primary-color)') : 'var(--bg-container)',
+              color: activeTab === tab.id ? (tab.id === 'audit' ? '#292929' : 'white') : 'var(--text-muted)',
+              fontWeight: '900', fontSize: '13px', cursor: 'pointer', whiteSpace: 'nowrap',
+              boxShadow: activeTab === tab.id ? 'var(--shadow-md)' : 'none'
+            }}
+            onClick={() => setActiveTab(tab.id)}
+          >
+            {tab.label}
+          </button>
+        ))}
       </div>
 
       {loading ? (
@@ -249,23 +253,25 @@ const InventoryBOMView = () => {
           {activeTab === 'insumos' && (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="md:col-span-1 flex flex-col gap-6">
-                <div className="card h-fit">
-                  <h3 className="font-bold text-[var(--text-main)] mb-4">Agregar Insumo</h3>
-                  <form onSubmit={handleAddInsumo} className="flex flex-col gap-4">
+                <div className="card h-fit" style={{ borderTop: '6px solid var(--primary-color)' }}>
+                  <h3 className="font-extrabold text-[var(--text-main)] mb-6 uppercase tracking-tight">Agregar Insumo</h3>
+                  <form onSubmit={handleAddInsumo} className="flex flex-col gap-5">
                     <div>
-                      <label className="block text-xs text-[var(--text-muted)] uppercase tracking-wider mb-1">Nombre</label>
-                      <input type="text" value={newInsumo.name} onChange={e => setNewInsumo({...newInsumo, name: e.target.value})} placeholder="Ej. Carne Res, Pan Hamb." className="w-full bg-[var(--bg-container)] border border-[var(--border-color)] rounded-lg p-2 text-sm text-[var(--text-main)]" required />
+                      <label className="block text-[10px] text-[var(--text-muted)] font-black uppercase tracking-widest mb-2">Nombre del ingrediente</label>
+                      <input type="text" value={newInsumo.name} onChange={e => setNewInsumo({...newInsumo, name: e.target.value})} placeholder="Ej. Carne Res" style={{ width: '100%', background: '#F9F9F9', border: '2px solid #EEE', borderRadius: '12px', padding: '12px', fontSize: '14px', fontWeight: '700' }} required />
                     </div>
-                    <div>
-                      <label className="block text-xs text-[var(--text-muted)] uppercase tracking-wider mb-1">Unidad de Medida</label>
-                      <input type="text" value={newInsumo.unit} onChange={e => setNewInsumo({...newInsumo, unit: e.target.value})} placeholder="Ej. kg, g, piezas" className="w-full bg-[var(--bg-container)] border border-[var(--border-color)] rounded-lg p-2 text-sm text-[var(--text-main)]" required />
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                      <div>
+                        <label className="block text-[10px] text-[var(--text-muted)] font-black uppercase tracking-widest mb-2">Unidad</label>
+                        <input type="text" value={newInsumo.unit} onChange={e => setNewInsumo({...newInsumo, unit: e.target.value})} placeholder="kg, piezas" style={{ width: '100%', background: '#F9F9F9', border: '2px solid #EEE', borderRadius: '12px', padding: '12px', fontSize: '14px', fontWeight: '700' }} required />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] text-[var(--text-muted)] font-black uppercase tracking-widest mb-2">Stock Ini.</label>
+                        <input type="number" step="0.01" value={newInsumo.currentStock} onChange={e => setNewInsumo({...newInsumo, currentStock: e.target.value})} style={{ width: '100%', background: '#F9F9F9', border: '2px solid #EEE', borderRadius: '12px', padding: '12px', fontSize: '14px', fontWeight: '700' }} />
+                      </div>
                     </div>
-                    <div>
-                      <label className="block text-xs text-[var(--text-muted)] uppercase tracking-wider mb-1">Stock Inicial (Opcional)</label>
-                      <input type="number" step="0.01" value={newInsumo.currentStock} onChange={e => setNewInsumo({...newInsumo, currentStock: e.target.value})} className="w-full bg-[var(--bg-container)] border border-[var(--border-color)] rounded-lg p-2 text-sm text-[var(--text-main)]" />
-                    </div>
-                    <button type="submit" disabled={saving} className="bg-violet-600 hover:bg-violet-500 text-white font-bold py-2 rounded-lg flex items-center justify-center gap-2 disabled:opacity-50">
-                      <Plus size={16} /> Crear Insumo
+                    <button type="submit" disabled={saving} className="btn btn-secondary" style={{ width: '100%', textTransform: 'uppercase' }}>
+                      <Plus size={20} /> Crear ahora
                     </button>
                   </form>
                 </div>
@@ -305,45 +311,47 @@ const InventoryBOMView = () => {
                   <div className="overflow-x-auto">
                     <table className="w-full text-left text-sm border-collapse">
                       <thead>
-                        <tr className="border-b border-[var(--border-color)] text-[var(--text-muted)]">
-                          <th className="pb-2 font-semibold uppercase text-xs">Nombre</th>
-                          <th className="pb-2 font-semibold uppercase text-xs">Unidad</th>
-                          <th className="pb-2 font-semibold uppercase text-xs text-right">Rendimiento 🍔</th>
-                          <th className="pb-2 font-semibold uppercase text-xs text-right">Stock Teórico</th>
+                        <tr className="border-b-2 border-[#EEE] text-[var(--text-muted)]">
+                          <th className="pb-4 font-black uppercase text-[10px] tracking-widest">Ingrediente</th>
+                          <th className="pb-4 font-black uppercase text-[10px] tracking-widest">Unidad</th>
+                          <th className="pb-4 font-black uppercase text-[10px] tracking-widest text-right">Rendimiento Estimado</th>
+                          <th className="pb-4 font-black uppercase text-[10px] tracking-widest text-right">Existencia Actual</th>
                         </tr>
                       </thead>
                       <tbody>
-                         {insumos.map((ins, index) => {
-                           const relRecipes = recipes.filter(r => r.insumoId === ins.id);
-                           const maxUse = relRecipes.length > 0 ? Math.max(...relRecipes.map(r => r.quantity)) : 0;
-                           const yieldBurgers = maxUse > 0 ? Math.floor(ins.currentStock / maxUse) : '-';
-                           const yieldDisplay = yieldBurgers !== '-' ? (yieldBurgers > 0 ? `${yieldBurgers}🍔` : 'Se acabó') : '-';
+                        {insumos.map((ins, index) => {
+                          const relRecipes = recipes.filter(r => r.insumoId === ins.id);
+                          const maxUse = relRecipes.length > 0 ? Math.max(...relRecipes.map(r => r.quantity)) : 0;
+                          const yieldBurgers = maxUse > 0 ? Math.floor(ins.currentStock / maxUse) : '-';
+                          const yieldDisplay = yieldBurgers !== '-' ? (yieldBurgers > 0 ? `${yieldBurgers}🍔` : 'Se acabó') : '-';
 
-                           return (
-                             <tr key={ins.id} className="border-b border-[var(--border-color)] hover:bg-[var(--bg-container)]">
-                               <td className="py-3 font-medium text-[var(--text-main)]">{index + 1}. {ins.name}</td>
-                               <td className="py-3 text-[var(--text-muted)]">{ins.unit}</td>
-                               <td className={`py-3 text-right font-medium ${yieldBurgers === '-' ? 'text-zinc-500' : (yieldBurgers > 5 ? 'text-amber-500' : 'text-rose-500')}`}>
-                                 {yieldDisplay}
-                               </td>
-                               <td className="py-3 text-right">
-                                 <input 
-                                   type="number" 
-                                   step="0.01"
-                                   data-nav={`insumo-${index}`}
-                                   onKeyDown={(e) => handleKeyDown(e, index, 'insumo')}
-                                   defaultValue={ins.currentStock}
-                                   onBlur={(e) => {
-                                     if (parseFloat(e.target.value) !== ins.currentStock) {
-                                        handleUpdateInsumoStock(ins.id, e.target.value);
-                                     }
-                                   }}
-                                   className="w-24 bg-[var(--bg-container)] border border-[var(--border-color)] rounded p-1 text-right text-emerald-500 font-bold" 
-                                  />
-                               </td>
-                             </tr>
-                           );
-                         })}
+                          return (
+                            <tr key={ins.id} className="border-b border-[#F0F0F0] hover:bg-[#FAFAFA] transition-colors">
+                              <td className="py-4 font-extrabold text-[var(--text-main)]">{index + 1}. {ins.name}</td>
+                              <td className="py-4 text-[var(--text-muted)] font-bold">{ins.unit}</td>
+                              <td className={`py-4 text-right font-black ${yieldBurgers === '-' ? 'text-zinc-500' : (yieldBurgers > 5 ? 'text-blue-500' : 'text-rose-600')}`}>
+                                <span style={{ background: yieldBurgers > 5 ? '#EBF8FF' : '#FFF5F5', padding: '4px 10px', borderRadius: '20px' }}>
+                                  {yieldDisplay}
+                                </span>
+                              </td>
+                              <td className="py-4 text-right">
+                                <input 
+                                  type="number" 
+                                  step="0.01"
+                                  data-nav={`insumo-${index}`}
+                                  onKeyDown={(e) => handleKeyDown(e, index, 'insumo')}
+                                  defaultValue={ins.currentStock}
+                                  onBlur={(e) => {
+                                    if (parseFloat(e.target.value) !== ins.currentStock) {
+                                       handleUpdateInsumoStock(ins.id, e.target.value);
+                                    }
+                                  }}
+                                  style={{ width: '90px', background: '#F5F5F5', border: '1px solid #DDD', borderRadius: '8px', padding: '8px', textAlign: 'right', fontWeight: '900', color: 'var(--text-main)' }}
+                                 />
+                              </td>
+                            </tr>
+                          );
+                        })}
                       </tbody>
                     </table>
                   </div>
@@ -355,14 +363,20 @@ const InventoryBOMView = () => {
           {/* TAB: RECIPES */}
           {activeTab === 'recipes' && (
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-              <div className="md:col-span-1 border-r border-[var(--border-color)] pr-4">
-                <h3 className="font-bold mb-4 text-sm uppercase tracking-wider text-[var(--text-muted)]">Seleccionar Producto</h3>
-                <div className="flex flex-col gap-2">
+              <div className="md:col-span-1 border-r-2 border-[#EEE] pr-4">
+                <h3 className="font-black mb-6 text-[10px] uppercase tracking-widest text-[var(--text-muted)]">Elige el Producto</h3>
+                <div className="flex flex-col gap-3">
                   {allProducts.map(prod => (
                     <button 
                       key={prod.id} 
                       onClick={() => setSelectedProduct(prod.id)}
-                      className={`text-left text-sm p-3 rounded-lg border transition-colors ${selectedProduct === prod.id ? 'bg-emerald-500/10 border-emerald-500/50 text-emerald-600 dark:text-emerald-300' : 'bg-[var(--bg-container)] border-[var(--border-color)] text-[var(--text-muted)] hover:border-[var(--primary-color)]'}`}
+                      className="theme-switch"
+                      style={{
+                        textAlign: 'left', fontSize: '13px', padding: '14px 16px', borderRadius: '16px', border: selectedProduct === prod.id ? '2px solid var(--primary-color)' : '1px solid #EEE',
+                        background: selectedProduct === prod.id ? '#FFF5F5' : 'white',
+                        color: selectedProduct === prod.id ? 'var(--primary-color)' : 'var(--text-main)',
+                        fontWeight: '800', cursor: 'pointer', boxShadow: selectedProduct === prod.id ? 'var(--shadow-sm)' : 'none'
+                      }}
                     >
                       {prod.name}
                     </button>
@@ -370,27 +384,27 @@ const InventoryBOMView = () => {
                 </div>
               </div>
               <div className="md:col-span-3">
-                <div className="card">
-                  <div className="flex justify-between items-center mb-6">
+                <div className="card" style={{ borderTop: '6px solid var(--success-color)' }}>
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
                     <div>
-                      <h3 className="text-xl font-bold text-[var(--text-main)]">Receta: {allProducts.find(p => p.id === selectedProduct)?.name}</h3>
-                      <p className="text-[var(--text-muted)] text-sm">Define la cantidad de cada insumo que se consume al vender esto.</p>
+                      <h3 className="text-2xl font-black text-[var(--text-main)] uppercase tracking-tight">{allProducts.find(p => p.id === selectedProduct)?.name}</h3>
+                      <p className="text-[var(--text-muted)] text-xs font-bold uppercase tracking-widest mt-1">Configuración de materia prima</p>
                     </div>
-                    <button onClick={handleSaveRecipe} disabled={saving} className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 px-4 rounded-lg flex items-center gap-2">
-                      <Save size={16} /> Guardar Receta
+                    <button onClick={handleSaveRecipe} disabled={saving} className="btn-secondary" style={{ background: 'var(--success-color)', textTransform: 'uppercase' }}>
+                      <Save size={20} /> Guardar Cambios
                     </button>
                   </div>
 
                   {insumos.length === 0 ? (
                     <p className="text-amber-500 text-sm">Primero debes registrar Insumos en la pestaña anterior.</p>
                   ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
                       {insumos.map(ins => {
                          const currentVal = currentRecipe.find(p => p.insumoId === ins.id)?.quantity || '';
                          return (
-                           <div key={ins.id} className="bg-[var(--bg-container)] border border-[var(--border-color)] rounded-lg p-4 flex flex-col justify-between">
-                             <span className="font-semibold text-[var(--text-main)] mb-2">{ins.name}</span>
-                             <div className="flex items-center gap-2">
+                           <div key={ins.id} style={{ background: '#FBFBFB', border: '1px solid #EEE', borderRadius: '16px', padding: '16px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                             <span className="font-black text-[11px] text-[var(--text-muted)] uppercase tracking-widest mb-3">{ins.name}</span>
+                             <div className="flex items-center gap-3">
                                <input 
                                  type="number"
                                  step="0.001"
@@ -398,9 +412,9 @@ const InventoryBOMView = () => {
                                  value={currentVal}
                                  onChange={e => handleRecipeChange(ins.id, e.target.value)}
                                  placeholder="0"
-                                 className="w-full bg-[var(--bg-color)] border border-[var(--border-color)] rounded p-2 text-right text-emerald-500 font-bold focus:border-emerald-500 focus:outline-none"
+                                 style={{ width: '100%', background: 'white', border: '2px solid #EEE', borderRadius: '10px', padding: '10px', textAlign: 'right', fontWeight: '900', color: 'var(--primary-color)', fontSize: '16px' }}
                                />
-                               <span className="text-[var(--text-muted)] text-sm shrink-0 w-8">{ins.unit}</span>
+                               <span className="text-[var(--text-muted)] text-xs font-black uppercase w-8">{ins.unit}</span>
                              </div>
                            </div>
                          );
@@ -414,28 +428,28 @@ const InventoryBOMView = () => {
 
           {/* TAB: AUDIT */}
           {activeTab === 'audit' && (
-            <div className="card">
-               <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+            <div className="card" style={{ borderTop: '8px solid var(--accent-color)' }}>
+               <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-6">
                   <div>
-                    <h3 className="text-xl font-bold text-[var(--text-main)] flex items-center gap-2">
-                      <Package className="text-amber-500" />
-                      Corte Físico de Inventario
+                    <h3 className="text-2xl font-black text-[var(--text-main)] uppercase tracking-tight flex items-center gap-3">
+                      <Package className="text-amber-500" size={32} />
+                      AUDITORÍA DE INVENTARIO
                     </h3>
-                    <p className="text-[var(--text-muted)] text-sm mt-1">Ingresa el conteo físico real. El sistema calculará la diferencia (merma).</p>
+                    <p className="text-[var(--text-muted)] text-xs font-bold uppercase tracking-widest mt-2">Introduce el conteo físico real para cerrar turno</p>
                   </div>
-                  <button onClick={handleReconcile} disabled={saving} className="bg-amber-600 hover:bg-amber-500 text-white font-bold py-2 px-4 rounded-lg flex items-center gap-2 w-full md:w-auto justify-center">
-                    <Check size={16} /> Finalizar Auditoría
+                  <button onClick={handleReconcile} disabled={saving} className="btn-primary" style={{ padding: '20px 40px', fontSize: '16px', letterSpacing: '1px' }}>
+                    <Check size={24} /> FINALIZAR CORTE
                   </button>
                </div>
 
                <div className="overflow-x-auto">
                  <table className="w-full text-left text-sm border-collapse">
                    <thead>
-                     <tr className="bg-[var(--bg-container)] border-b border-[var(--border-color)] text-[var(--text-muted)]">
-                       <th className="p-3 font-semibold uppercase text-xs">Insumo</th>
-                       <th className="p-3 font-semibold uppercase text-xs text-center w-32">Teórico (Sistema)</th>
-                       <th className="p-3 font-semibold uppercase text-xs text-center w-32">Conteo Físico</th>
-                       <th className="p-3 font-semibold uppercase text-xs text-right w-32">Diferencia</th>
+                     <tr className="border-b-2 border-[#EEE] text-[var(--text-muted)]">
+                       <th className="p-4 font-black uppercase text-[10px] tracking-widest">Ingrediente</th>
+                       <th className="p-4 font-black uppercase text-[10px] tracking-widest text-center">Stock Teórico</th>
+                       <th className="p-4 font-black uppercase text-[10px] tracking-widest text-center">Conteo Físico</th>
+                       <th className="p-4 font-black uppercase text-[10px] tracking-widest text-right">Diferencia / Merma</th>
                      </tr>
                    </thead>
                    <tbody>
@@ -445,12 +459,12 @@ const InventoryBOMView = () => {
                         const isMerma = diff < 0;
                         
                         return (
-                          <tr key={ins.id} className="border-b border-[var(--border-color)] hover:bg-[var(--bg-container)]">
-                            <td className="p-3 font-medium text-[var(--text-main)]">{index + 1}. {ins.name}</td>
-                            <td className="p-3 text-center text-[var(--text-muted)] font-mono bg-[var(--bg-container)]">
+                          <tr key={ins.id} className="border-b border-[#F0F0F0] hover:bg-[#FAFAFA] transition-colors">
+                            <td className="p-4 font-extrabold text-[var(--text-main)]">{index + 1}. {ins.name}</td>
+                            <td className="p-4 text-center text-[var(--text-muted)] font-black uppercase bg-[#F9F9F9] rounded-lg">
                                {ins.currentStock} {ins.unit}
                             </td>
-                            <td className="p-3 text-center">
+                            <td className="p-4 text-center">
                               <input 
                                 type="number" 
                                 step="0.01"
@@ -458,11 +472,13 @@ const InventoryBOMView = () => {
                                 onKeyDown={(e) => handleKeyDown(e, index, 'audit')}
                                 value={auditCounts[ins.id] ?? ins.currentStock}
                                 onChange={e => setAuditCounts({...auditCounts, [ins.id]: e.target.value})}
-                                className="w-24 bg-[var(--bg-container)] border border-amber-500/50 focus:border-amber-500 rounded p-2 text-center text-[var(--text-main)] font-bold" 
+                                style={{ width: '100px', background: 'white', border: '3px solid var(--accent-color)', borderRadius: '12px', padding: '12px', textAlign: 'center', color: '#292929', fontWeight: '900', fontSize: '18px' }}
                                />
                             </td>
-                            <td className={`p-3 text-right font-bold ${isMerma ? 'text-rose-500' : (diff > 0 ? 'text-emerald-500' : 'text-[var(--text-muted)]')}`}>
-                               {diff > 0 ? '+' : ''}{diff.toFixed(2)} {ins.unit}
+                            <td className={`p-4 text-right font-black ${isMerma ? 'text-rose-600' : (diff > 0 ? 'text-blue-600' : 'text-[var(--text-muted)]')}`}>
+                               <span style={{ background: isMerma ? '#FFF5F5' : (diff > 0 ? '#EBF8FF' : '#F5F5F5'), padding: '6px 14px', borderRadius: '20px' }}>
+                                 {diff > 0 ? '+' : ''}{diff.toFixed(2)} {ins.unit}
+                               </span>
                             </td>
                           </tr>
                         );
