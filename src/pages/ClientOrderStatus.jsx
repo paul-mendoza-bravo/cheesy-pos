@@ -7,12 +7,12 @@ import { CheckCircle, Clock, ChefHat, Bike, Star, X, RotateCcw } from 'lucide-re
 const BACKEND_URL = import.meta.env.VITE_API_URL || `http://${window.location.hostname}:3001`;
 
 const STATUS_CONFIG = {
-  PENDING:   { label: 'Esperando confirmación', icon: Clock,        color: 'var(--warning-color)', step: 0 },
-  ACCEPTED:  { label: 'Pedido aceptado',         icon: CheckCircle,  color: 'var(--success-color)', step: 1 },
-  COOKING:   { label: 'En preparación',           icon: ChefHat,      color: 'var(--primary-color)', step: 2 },
-  READY:     { label: 'Listo para entrega',       icon: Star,         color: '#6366f1',              step: 3 },
-  DELIVERED: { label: '¡Entregado!',              icon: CheckCircle,  color: 'var(--success-color)', step: 4 },
-  REJECTED:  { label: 'No disponible',           icon: X,            color: 'var(--error-color)',   step: -1 },
+  PENDING:   { label: 'Esperando cocina',    icon: Clock,        color: 'var(--warning-color)', step: 0 },
+  ACCEPTED:  { label: '¡Orden aceptada!',     icon: CheckCircle,  color: 'var(--success-color)', step: 1 },
+  COOKING:   { label: 'Cocinando tu burger', icon: ChefHat,      color: 'var(--accent-color)',  step: 2 },
+  READY:     { label: '¡Listisimo p/entrega!', icon: Star,         color: 'var(--primary-color)', step: 3 },
+  DELIVERED: { label: '¡Entregado! Disfruta', icon: CheckCircle,  color: 'var(--success-color)', step: 4 },
+  REJECTED:  { label: 'No disponible hoy',    icon: X,            color: 'var(--error-color)',   step: -1 },
 };
 
 const STEPS = ['PENDING', 'ACCEPTED', 'COOKING', 'READY', 'DELIVERED'];
@@ -69,17 +69,17 @@ const ClientOrderStatus = () => {
   const isDelivered = status === 'DELIVERED';
 
   return (
-    <div className="theme-switch" style={{ minHeight: '100vh', background: 'var(--bg-color)', fontFamily: "'Inter', sans-serif", color: 'var(--text-main)', padding: '24px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+    <div className="theme-switch" style={{ minHeight: '100vh', background: 'var(--bg-color)', fontFamily: "'Inter', sans-serif", color: 'var(--text-main)', padding: '0 0 40px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
 
-      {/* Header */}
-      <div className="glass" style={{ width: '100%', maxWidth: '480px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 20px', borderRadius: '16px', marginBottom: '32px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span style={{ fontSize: '22px' }}>🧀</span>
-          <span style={{ fontWeight: '800', fontSize: '18px', fontFamily: "'Outfit', sans-serif" }}>Cheesy</span>
+      {/* Header - McNavbar */}
+      <div className="glass" style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px', marginBottom: '32px', borderRadius: '0' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <span style={{ fontSize: '24px' }}>🧀</span>
+          <span style={{ fontWeight: '900', fontSize: '20px', fontFamily: "'Outfit', sans-serif", color: 'white' }}>CHEESY</span>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: connected ? 'var(--success-color)' : 'var(--error-color)', transition: 'background 0.3s' }} />
-          <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: '600' }}>{connected ? 'En vivo' : 'Reconectando...'}</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: connected ? '#FFC72C' : 'white', boxShadow: connected ? '0 0 8px #FFC72C' : 'none' }} />
+          <span style={{ fontSize: '12px', color: 'white', fontWeight: '800' }}>{connected ? 'LIVE TRACKING' : 'RECONNECTING...'}</span>
         </div>
       </div>
 
@@ -100,66 +100,67 @@ const ClientOrderStatus = () => {
       )}
 
       {/* Main Status Card */}
-      <div style={{ width: '100%', maxWidth: '480px', position: 'relative', zIndex: 10 }}>
+      <div style={{ width: '100%', maxWidth: '480px', padding: '0 20px', position: 'relative', zIndex: 10 }}>
         <div className="card" style={{
-          border: `2px solid ${config.color}`, borderRadius: 'var(--radius-xl)', padding: '40px 28px',
-          textAlign: 'center', boxShadow: 'var(--shadow-premium)', marginBottom: '24px'
+          border: `4px solid ${config.color}`, borderRadius: '24px', padding: '40px 24px',
+          textAlign: 'center', boxShadow: 'var(--shadow-lg)', marginBottom: '28px'
         }}>
           <div style={{
-            width: '80px', height: '80px', borderRadius: '50%',
-            background: 'var(--bg-container)', border: `3px solid ${config.color}`,
+            width: '100px', height: '100px', borderRadius: '50%',
+            background: '#f9f9f9', border: `4px solid ${config.color}`,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            margin: '0 auto 24px',
-            transition: 'all 0.5s var(--spring)'
+            margin: '0 auto 28px',
+            transform: 'scale(1.1)',
+            boxShadow: 'var(--shadow-sm)'
           }}>
-            <Icon size={36} color={config.color} />
+            <Icon size={48} color={config.color} />
           </div>
 
-          <h1 style={{ fontSize: '24px', fontWeight: '800', marginBottom: '8px', color: 'var(--text-main)', fontFamily: "'Outfit', sans-serif" }}>{config.label}</h1>
-          <p style={{ color: 'var(--text-muted)', fontSize: '14px', margin: '0 0 16px', fontWeight: '500' }}>
-            Orden <strong style={{ color: 'var(--text-main)' }}>#{orderId.slice(-6).toUpperCase()}</strong>
+          <h1 style={{ fontSize: '28px', fontWeight: '900', marginBottom: '10px', color: 'var(--text-main)', fontFamily: "'Outfit', sans-serif" }}>{config.label}</h1>
+          <p style={{ color: 'var(--text-muted)', fontSize: '16px', margin: '0 0 20px', fontWeight: '700' }}>
+            ORDEN <span style={{ color: 'var(--primary-color)' }}>#{orderId.slice(-6).toUpperCase()}</span>
           </p>
 
           {estimatedMinutes && status === 'ACCEPTED' && (
-            <div style={{ background: 'var(--primary-soft)', border: '1px solid var(--primary-color)', borderRadius: '12px', padding: '12px 16px', fontSize: '14px', color: 'var(--primary-color)', marginTop: '16px', fontWeight: '700' }}>
-              ⏱ Tiempo estimado: {estimatedMinutes} mins
+            <div style={{ background: 'var(--accent-color)', borderRadius: 'var(--radius-full)', padding: '12px 24px', fontSize: '15px', color: '#292929', marginTop: '20px', fontWeight: '900', display: 'inline-block', boxShadow: 'var(--shadow-sm)' }}>
+              ⏱ LISTO EN {estimatedMinutes} MINS
             </div>
           )}
 
           {isRejected && rejectionReason && (
-            <div style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid var(--error-color)', borderRadius: '12px', padding: '12px 16px', fontSize: '14px', color: 'var(--error-color)', marginTop: '16px', fontWeight: '600' }}>
+            <div style={{ background: '#FFEEF0', border: '2px solid var(--error-color)', borderRadius: '16px', padding: '16px', fontSize: '15px', color: 'var(--error-color)', marginTop: '20px', fontWeight: '800' }}>
               {rejectionReason}
             </div>
           )}
         </div>
 
-        {/* Progress Stepper */}
+        {/* Progress Stepper - McPill Style */}
         {!isRejected && (
-          <div className="card" style={{ padding: '24px', marginBottom: '24px', background: 'var(--bg-container)', border: 'none' }}>
+          <div className="card" style={{ padding: '32px 28px', marginBottom: '32px', background: 'var(--bg-container)', border: '1px solid #eee' }}>
             {STEPS.map((step, idx) => {
               const stepConfig = STATUS_CONFIG[step];
               const StepIcon = stepConfig.icon;
               const isDone = currentStep > idx;
               const isActive = currentStep === idx;
-              const stepColor = isDone ? 'var(--success-color)' : isActive ? 'var(--primary-color)' : 'var(--text-muted)';
+              const stepColor = isDone ? 'var(--success-color)' : isActive ? 'var(--primary-color)' : '#CCCCCC';
 
               return (
-                <div key={step} style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: idx < STEPS.length - 1 ? '4px' : 0 }}>
+                <div key={step} style={{ display: 'flex', alignItems: 'center', gap: '20px', marginBottom: idx < STEPS.length - 1 ? '6px' : 0 }}>
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                    <div style={{
-                      width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      background: isDone ? 'var(--success-color)' : isActive ? 'var(--primary-color)' : 'var(--bg-color)',
-                      border: isActive ? `2px solid var(--primary-color)` : `1px solid var(--border-color)`,
-                      transition: 'all 0.4s ease'
+                    <div className="theme-switch" style={{
+                      width: '40px', height: '40px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      background: isDone ? 'var(--success-color)' : isActive ? 'var(--accent-color)' : '#F5F5F5',
+                      border: isActive ? `3px solid var(--primary-color)` : isDone ? 'none' : `2px solid #EEEEEE`,
+                      transition: 'all 0.4s var(--spring)'
                     }}>
-                      <StepIcon size={14} color={isDone || isActive ? 'white' : 'var(--text-muted)'} />
+                      <StepIcon size={18} color={isDone ? 'white' : isActive ? '#292929' : '#BBB'} />
                     </div>
                     {idx < STEPS.length - 1 && (
-                      <div style={{ width: '2px', height: '24px', background: isDone ? 'var(--success-color)' : 'var(--border-color)', transition: 'all 0.4s ease' }} />
+                      <div style={{ width: '4px', height: '28px', background: isDone ? 'var(--success-color)' : '#EEEEEE', transition: 'all 0.4s ease', borderRadius: '2px' }} />
                     )}
                   </div>
-                  <span style={{ fontSize: '14px', fontWeight: isActive ? '800' : '600', color: stepColor, transition: 'all 0.3s' }}>
-                    {stepConfig.label}
+                  <span style={{ fontSize: '16px', fontWeight: isActive || isDone ? '900' : '700', color: stepColor, transition: 'all 0.3s' }}>
+                    {stepConfig.label.toUpperCase()}
                   </span>
                 </div>
               );
@@ -168,13 +169,13 @@ const ClientOrderStatus = () => {
         )}
 
         {/* CTA Buttons */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '100%' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '100%', padding: '0 20px' }}>
           {(isRejected || isDelivered) && (
-            <button onClick={() => navigate('/client/menu')} className="btn btn-primary" style={{ padding: '16px', fontSize: '16px' }}>
-              <RotateCcw size={20} /> {isDelivered ? 'Pedir de nuevo' : 'Volver al menú'}
+            <button onClick={() => navigate('/client/menu')} className="btn btn-primary" style={{ padding: '20px', fontSize: '18px', textTransform: 'uppercase' }}>
+              <RotateCcw size={22} /> {isDelivered ? 'Pedir de nuevo' : 'Volver al menú'}
             </button>
           )}
-          <button onClick={() => { logout(); navigate('/client/login'); }} style={{ padding: '14px', border: 'none', borderRadius: '14px', background: 'var(--bg-container)', color: 'var(--text-muted)', fontWeight: '700', fontSize: '14px', cursor: 'pointer', textAlign: 'center' }}>
+          <button onClick={() => { logout(); navigate('/client/login'); }} style={{ padding: '18px', border: 'none', borderRadius: 'var(--radius-full)', background: '#EEEEEE', color: '#666', fontWeight: '900', fontSize: '15px', cursor: 'pointer', textAlign: 'center', textTransform: 'uppercase' }}>
             Cerrar sesión
           </button>
         </div>

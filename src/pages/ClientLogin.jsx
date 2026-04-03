@@ -57,37 +57,38 @@ const ClientLogin = () => {
         boxShadow: 'var(--shadow-premium)'
       }}>
         {/* Header */}
+        {/* Header - McStyle Branding */}
         <div style={{ textAlign: 'center', marginBottom: '32px' }}>
           <div style={{
-            background: 'linear-gradient(135deg, var(--primary-color), var(--secondary-color))',
+            background: 'var(--primary-color)',
             borderRadius: '50%',
-            width: '80px',
-            height: '80px',
+            width: '90px',
+            height: '90px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            margin: '0 auto 20px',
-            boxShadow: '0 10px 20px rgba(249, 115, 22, 0.25)'
+            margin: '0 auto 24px',
+            boxShadow: '0 8px 24px rgba(218, 41, 28, 0.3)'
           }}>
-            <ChefHat size={40} color="white" />
+            <ChefHat size={48} color="#FFC72C" />
           </div>
-          <h1 style={{ color: 'var(--text-main)', fontSize: '32px', fontWeight: '800', margin: 0, fontFamily: "'Outfit', sans-serif" }}>Cheesy</h1>
-          <p style={{ color: 'var(--text-muted)', fontSize: '14px', marginTop: '8px', fontWeight: '500' }}>
-            {mode === 'login' ? '¡Qué bueno verte de nuevo!' : 'Únete a la familia Cheesy'}
+          <h1 style={{ color: 'var(--text-main)', fontSize: '36px', fontWeight: '900', margin: 0, fontFamily: "'Outfit', sans-serif" }}>Cheesy</h1>
+          <p style={{ color: 'var(--text-muted)', fontSize: '15px', marginTop: '10px', fontWeight: '600' }}>
+            {mode === 'login' ? '¡Es hora de una hamburguesa!' : 'Crea tu cuenta y empieza a pedir'}
           </p>
         </div>
 
         {/* Tab switcher */}
-        <div style={{ display: 'flex', background: 'var(--bg-container)', borderRadius: '14px', padding: '5px', marginBottom: '32px' }}>
+        <div style={{ display: 'flex', background: '#f5f5f5', borderRadius: '18px', padding: '6px', marginBottom: '32px', border: '1px solid var(--border-color)' }}>
           {['login', 'register'].map(tab => (
             <button key={tab} onClick={() => { setMode(tab); setError(''); }}
               style={{
-                flex: 1, padding: '12px', border: 'none', borderRadius: '10px',
-                background: mode === tab ? 'var(--bg-surface)' : 'transparent',
-                color: mode === tab ? 'var(--text-main)' : 'var(--text-muted)',
-                fontWeight: '700', fontSize: '14px', cursor: 'pointer',
-                boxShadow: mode === tab ? 'var(--shadow-sm)' : 'none',
-                transition: 'all 0.2s ease'
+                flex: 1, padding: '14px', border: 'none', borderRadius: '14px',
+                background: mode === tab ? 'var(--primary-color)' : 'transparent',
+                color: mode === tab ? 'white' : 'var(--text-muted)',
+                fontWeight: '800', fontSize: '14px', cursor: 'pointer',
+                boxShadow: mode === tab ? '0 4px 12px rgba(218, 41, 28, 0.2)' : 'none',
+                transition: 'all var(--transition-fast)'
               }}>
               {tab === 'login' ? 'Entrar' : 'Registrar'}
             </button>
@@ -109,18 +110,18 @@ const ClientLogin = () => {
         <form onSubmit={handleSubmit}>
           {mode === 'register' && (
             <>
-              <InputField icon={<User size={18} />} name="name" placeholder="Tu nombre" value={form.name} onChange={handleChange} autoComplete="name" />
-              <InputField icon={<Mail size={18} />} name="email" placeholder="Email (opcional)" value={form.email} onChange={handleChange} type="email" autoComplete="email" />
+              <InputField icon={<User size={20} />} name="name" placeholder="Tu nombre" value={form.name} onChange={handleChange} autoComplete="name" />
+              <InputField icon={<Mail size={20} />} name="email" placeholder="Email (opcional)" value={form.email} onChange={handleChange} type="email" autoComplete="email" />
             </>
           )}
-          <InputField icon={<Phone size={18} />} name="phone" placeholder="Número celular" value={form.phone} onChange={handleChange} type="tel" required inputMode="tel" autoComplete="tel" />
-          <InputField icon={<Lock size={18} />} name="password" placeholder="Contraseña" value={form.password} onChange={handleChange} type="password" required autoComplete="current-password" />
+          <InputField icon={<Phone size={20} />} name="phone" placeholder="Número celular" value={form.phone} onChange={handleChange} type="tel" required inputMode="tel" autoComplete="tel" />
+          <InputField icon={<Lock size={20} />} name="password" placeholder="Contraseña" value={form.password} onChange={handleChange} type="password" required autoComplete="current-password" />
 
           <button type="submit" disabled={loading} className="btn btn-primary" style={{
-            width: '100%', padding: '16px', fontSize: '16px', marginTop: '12px'
+            width: '100%', padding: '18px', fontSize: '18px', marginTop: '16px', textTransform: 'uppercase', letterSpacing: '0.5px'
           }}>
-            {loading ? 'Cocinando acceso...' : (mode === 'login' ? 'Entrar ahora' : 'Crear mi cuenta')}
-            {!loading && <ArrowRight size={20} />}
+            {loading ? 'Preparando...' : (mode === 'login' ? 'Pedir ahora' : 'Crear mi cuenta')}
+            {!loading && <ArrowRight size={22} />}
           </button>
         </form>
       </div>
@@ -129,9 +130,9 @@ const ClientLogin = () => {
 };
 
 const InputField = ({ icon, name, placeholder, value, onChange, type = 'text', required, inputMode, autoComplete }) => (
-  <div style={{ position: 'relative', marginBottom: '16px' }}>
+  <div style={{ position: 'relative', marginBottom: '20px' }}>
     <div style={{
-      position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)',
+      position: 'absolute', left: '18px', top: '50%', transform: 'translateY(-50%)',
       color: 'var(--text-muted)', pointerEvents: 'none'
     }}>{icon}</div>
     <input
@@ -145,20 +146,20 @@ const InputField = ({ icon, name, placeholder, value, onChange, type = 'text', r
       autoComplete={autoComplete}
       style={{
         width: '100%',
-        padding: '16px 16px 16px 48px',
-        background: 'var(--bg-container)',
-        border: '1px solid var(--border-color)',
-        borderRadius: '14px',
+        padding: '18px 18px 18px 54px',
+        background: '#f9f9f9',
+        border: '2px solid #eeeeee',
+        borderRadius: '16px',
         color: 'var(--text-main)',
-        fontSize: '15px',
-        fontWeight: '500',
+        fontSize: '16px',
+        fontWeight: '700',
         outline: 'none',
         boxSizing: 'border-box',
-        transition: 'all 0.2s',
+        transition: 'all var(--transition-fast)',
         WebkitAppearance: 'none'
       }}
-      onFocus={(e) => e.target.style.borderColor = 'var(--primary-color)'}
-      onBlur={(e) => e.target.style.borderColor = 'var(--border-color)'}
+      onFocus={(e) => e.target.style.borderColor = 'var(--accent-color)'}
+      onBlur={(e) => e.target.style.borderColor = '#eeeeee'}
     />
   </div>
 );
