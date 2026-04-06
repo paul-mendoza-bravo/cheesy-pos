@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { mockProducts, MODIFIERS } from '../data/mockProducts';
-import { Save, Beef, Check, Package, RefreshCw, AlertCircle, Search, Activity, Box, Database, Zap } from 'lucide-react';
+import { ArrowLeft, Save, Plus, Check, Package, Search, Activity, Box, Database, FileText, ChevronRight, AlertCircle } from 'lucide-react';
 
 const HOST_URL = import.meta.env.VITE_API_URL || `http://${window.location.hostname}:3001`;
 const API_URL = `${HOST_URL}/api`;
@@ -132,7 +132,7 @@ const InventoryBOMView = () => {
   };
 
   const handleReconcile = async () => {
-    if (!window.confirm('¿Seguro que deseas procesar la auditoría? Esto actualizará las existencias en el sistema.')) return;
+    if (!window.confirm('¿Confirmar conciliación física? Los datos centrales se sobrescribirán con tus entradas actuales.')) return;
     setSaving(true);
     try {
       const payload = Object.keys(auditCounts).map(id => ({
@@ -147,7 +147,7 @@ const InventoryBOMView = () => {
         body: JSON.stringify({ inventoryCounts: payload, userId: currentUser?.id })
       });
       if (res.ok) {
-        alert('Auditoría completada exitosamente.');
+        alert('Conciliación aplicada con éxito.');
         await fetchData();
         setActiveTab('insumos');
       }
@@ -158,53 +158,32 @@ const InventoryBOMView = () => {
     }
   };
 
-  const getProductIcon = (name = '') => {
-    const n = name.toLowerCase();
-    if (n.includes('pan')) return '🍔';
-    if (n.includes('carne') || n.includes('beef')) return '🥩';
-    if (n.includes('queso') || n.includes('cheese')) return '🧀';
-    if (n.includes('papa') || n.includes('fries')) return '🍟';
-    if (n.includes('tocino') || n.includes('bacon')) return '🥓';
-    if (n.includes('salsa') || n.includes('bbq')) return '🥫';
-    return '📦';
-  };
-
-  const CircularGauge = ({ value, label, color }) => {
-    const strokeWidth = 8;
-    const radius = 32;
-    const circ = 2 * Math.PI * radius;
-    const offset = circ - (value / 100) * circ;
+  // Modern Minimal gauge implementation without SVG complexity just a clean line indicator
+  const LineGauge = ({ value, label, total = 100 }) => {
+    const percentage = Math.min((value / total) * 100, 100);
+    const colorClass = percentage < 25 ? 'bg-red-500' : percentage < 50 ? 'bg-yellow-500' : 'bg-emerald-500';
     
     return (
-      <div className="flex flex-col items-center gap-3 bg-white/5 p-4 rounded-3xl border border-white/10 hover:bg-white/10 transition-colors">
-        <div className="relative w-20 h-20">
-          <svg className="w-full h-full transform -rotate-90 drop-shadow-md">
-            <circle stroke="rgba(255,255,255,0.05)" strokeWidth={strokeWidth} fill="transparent" r={radius} cx="40" cy="40" />
-            <circle 
-              stroke={color} 
-              strokeWidth={strokeWidth} 
-              strokeDasharray={circ} 
-              strokeDashoffset={offset} 
-              strokeLinecap="round" 
-              fill="transparent" 
-              r={radius} cx="40" cy="40" 
-              className="transition-all duration-1000 ease-out"
-            />
-          </svg>
-          <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <span className="text-xl font-black text-white">{value}%</span>
-          </div>
+      <div className="flex flex-col gap-2 p-5 bg-white border border-zinc-100 rounded-2xl shadow-sm hover:shadow-md transition-shadow">
+        <div className="flex justify-between items-baseline mb-1">
+          <span className="text-sm font-medium text-zinc-600">{label}</span>
+          <span className="text-xl font-bold text-zinc-900">{value}%</span>
         </div>
-        <span className="text-xs font-bold text-zinc-400 uppercase tracking-widest text-center leading-tight">{label}</span>
+        <div className="w-full h-1.5 bg-zinc-100 rounded-full overflow-hidden">
+          <div className={`h-full rounded-full transition-all duration-700 ${colorClass}`} style={{ width: `${percentage}%` }}></div>
+        </div>
       </div>
     );
   };
 
   if (!currentUser?.role?.includes('admin')) {
     return (
-      <div className="flex flex-col items-center justify-center h-screen bg-zinc-900 text-white">
-        <AlertCircle size={48} className="text-rose-500 mb-4" />
-        <h2 className="text-2xl font-bold">Acceso Denegado</h2>
+      <div className="flex items-center justify-center h-screen bg-zinc-50">
+        <div className="text-center">
+           <AlertCircle className="mx-auto text-red-500 mb-4" size={40} />
+           <h2 className="text-xl font-semibold text-zinc-800">Acceso Restringido</h2>
+           <p className="text-sm text-zinc-500 mt-2">Permisos insuficientes para ver este módulo.</p>
+        </div>
       </div>
     );
   }
@@ -212,338 +191,331 @@ const InventoryBOMView = () => {
   const filteredInsumos = insumos.filter(ins => ins.name.toLowerCase().includes(searchQuery.toLowerCase()));
 
   return (
-    <div className="min-h-screen bg-[#0E1218] text-zinc-100 font-sans tracking-tight pb-20 selection:bg-rose-500/30 overflow-x-hidden">
+    <div className="min-h-screen bg-zinc-50/50 text-zinc-900 font-sans selection:bg-zinc-200 pb-24">
       
-      {/* ── BACKGROUND GLOWS ── */}
-      <div className="fixed top-0 left-1/4 w-96 h-96 bg-rose-600/10 rounded-full blur-[120px] pointer-events-none"></div>
-      <div className="fixed bottom-0 right-1/4 w-[500px] h-[500px] bg-amber-500/10 rounded-full blur-[150px] pointer-events-none"></div>
-
-      {/* ── TOP NAVIGATION ── */}
-      <nav className="sticky top-0 z-50 bg-[#0E1218]/80 backdrop-blur-3xl border-b border-white/5 pt-safe mb-8 supports-[backdrop-filter]:bg-[#0E1218]/60">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex flex-col md:flex-row justify-between items-center gap-6">
+      {/* ── MINIMAL TOP NAVBAR ── */}
+      <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-zinc-200/80">
+        <div className="max-w-6xl mx-auto px-6 h-20 flex items-center justify-between">
           <div className="flex items-center gap-4">
              <button 
                onClick={() => navigate('/admin')} 
-               className="w-14 h-14 bg-gradient-to-tr from-rose-600 to-rose-500 rounded-2xl flex items-center justify-center shadow-lg shadow-rose-900/40 hover:scale-105 active:scale-95 transition-all group"
+               className="p-2.5 text-zinc-400 hover:text-zinc-900 hover:bg-zinc-100 rounded-xl transition-colors"
              >
-               <Beef size={28} className="text-white group-hover:-rotate-12 transition-transform" />
+               <ArrowLeft size={20} />
              </button>
              <div>
-               <h1 className="text-3xl md:text-4xl font-black text-white uppercase tracking-tighter loading-none">
-                 Intelligence V2
-               </h1>
-               <div className="flex items-center gap-2 mt-1">
-                 <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)] animate-pulse"></div>
-                 <span className="text-[11px] font-black text-zinc-400 uppercase tracking-[0.2em]">CORE Sincronizado</span>
-               </div>
+               <h1 className="text-xl font-semibold tracking-tight text-zinc-900 hidden sm:block">Control de Inventario</h1>
+               <h1 className="text-xl font-semibold tracking-tight text-zinc-900 sm:hidden">Inventario</h1>
              </div>
           </div>
 
-          <div className="bg-black/40 p-1.5 rounded-full flex gap-1 border border-white/5 backdrop-blur-xl shrink-0">
+          <div className="flex items-center gap-1 bg-zinc-100/80 p-1.5 rounded-xl border border-zinc-200/50">
              {[
-               { id: 'insumos', label: 'Cámaras', icon: <Box size={16}/> },
-               { id: 'recipes', label: 'BOM / Fórmulas', icon: <Database size={16}/> },
-               { id: 'audit', label: 'Auditoría', icon: <Check size={16}/> }
+               { id: 'insumos', label: 'Stock', icon: <Box size={15}/> },
+               { id: 'recipes', label: 'Recetas', icon: <Database size={15}/> },
+               { id: 'audit', label: 'Auditoría', icon: <FileText size={15}/> }
              ].map(tab => (
                <button 
                  key={tab.id}
                  onClick={() => setActiveTab(tab.id)}
-                 className={`flex items-center gap-2 px-6 py-3 rounded-full text-xs font-black uppercase tracking-wider transition-all duration-300 ${
+                 className={`flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-medium transition-all ${
                     activeTab === tab.id 
-                    ? 'bg-white text-black shadow-lg scale-100' 
-                    : 'text-zinc-400 hover:bg-white/10 hover:text-white'
+                    ? 'bg-white text-zinc-900 shadow-sm border border-zinc-200' 
+                    : 'text-zinc-500 hover:text-zinc-900 hover:bg-zinc-200/50 border border-transparent'
                  }`}
                >
                  {tab.icon}
-                 <span className="hidden sm:inline">{tab.label}</span>
+                 <span className="hidden md:inline">{tab.label}</span>
                </button>
              ))}
           </div>
         </div>
-      </nav>
+      </header>
 
-      {/* ── MAIN LAYOUT ── */}
-      <main className="max-w-7xl mx-auto px-6 relative z-10">
+      {/* ── MAIN CONTENT ── */}
+      <main className="max-w-6xl mx-auto px-6 pt-10">
         
         {loading ? (
-          <div className="flex flex-col items-center justify-center py-32 gap-6">
-             <Activity className="animate-pulse text-amber-500" size={64} />
-             <span className="font-black text-xs uppercase tracking-[0.4em] text-zinc-500">Calculando Existencias...</span>
+          <div className="flex flex-col items-center justify-center py-40 gap-4">
+             <Activity className="animate-spin text-zinc-400" size={32} />
+             <span className="text-sm font-medium text-zinc-500 tracking-wide">Cargando datos...</span>
           </div>
         ) : (
-          <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
             
-            {/* ────── CENTER CANVAS (SPAN 8) ────── */}
-            <div className="xl:col-span-8 flex flex-col gap-8">
+            {/* ────── CENTER AREA (SPAN 8) ────── */}
+            <div className="lg:col-span-8 flex flex-col gap-8">
               
-              {/* TOP DASHBOARD CARDS */}
+              {/* TOP KPIS (Only on INSUMOS) */}
               {activeTab === 'insumos' && (
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <CircularGauge value={74} label="Panes" color="#DA291C" />
-                  <CircularGauge value={89} label="Queso" color="#FFC72C" />
-                  <CircularGauge value={61} label="Carne" color="#10B981" />
-                  <CircularGauge value={55} label="Papas" color="#3B82F6" />
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                  <LineGauge value={74} label="Panes" />
+                  <LineGauge value={89} label="Quesos" />
+                  <LineGauge value={12} label="Carne" />
+                  <LineGauge value={55} label="Papas" />
                 </div>
               )}
 
-              {/* MAIN CONTENT AREA */}
-              <div className="bg-white/[0.02] border border-white/5 rounded-[32px] p-6 lg:p-10 backdrop-blur-3xl shadow-2xl relative overflow-hidden">
-                <div className="absolute top-0 right-0 p-10 opacity-[0.02] pointer-events-none">
-                   <Database size={200} />
-                </div>
-
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-6 relative z-10">
+              {/* LIST / WORKSPACE CONTAINER */}
+              <div className="bg-white border border-zinc-200/80 rounded-2xl shadow-sm">
+                
+                {/* Header of Workspace */}
+                <div className="p-6 md:p-8 border-b border-zinc-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                   <div>
-                    <h2 className="text-3xl font-black uppercase tracking-tight text-white mb-2">
-                       {activeTab === 'insumos' ? 'Gestión de Stock' : activeTab === 'recipes' ? 'Arquitectura de Recetas' : 'Arqueo Físico'}
+                    <h2 className="text-lg font-semibold text-zinc-900 tracking-tight">
+                       {activeTab === 'insumos' ? 'Gestión de Almacén' : activeTab === 'recipes' ? 'Estructura de Costos y Recetas' : 'Revisión Física'}
                     </h2>
-                    <p className="text-zinc-400 text-xs font-bold uppercase tracking-widest">
-                       {activeTab === 'insumos' ? 'Control de cajas y mililitros' : activeTab === 'recipes' ? 'Costo y Gramaje por platillo' : 'Conciliación de inventario ciego'}
+                    <p className="text-sm text-zinc-500 mt-1">
+                       {activeTab === 'insumos' ? 'Actualiza inventarios en tiempo real.' : activeTab === 'recipes' ? 'Modifica BOM (Bill of Materials).' : 'Registra diferencias para cuadrar el sistema.'}
                     </p>
                   </div>
 
                   {activeTab === 'insumos' && (
-                    <div className="relative w-full md:w-auto">
-                      <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500" size={18} />
+                    <div className="relative w-full md:w-64">
+                      <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400" size={16} />
                       <input 
                         type="text" 
-                        placeholder="Buscar componente..." 
+                        placeholder="Buscar artículo..." 
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full md:w-64 bg-black/40 border border-white/10 rounded-full h-12 pl-12 pr-6 text-sm font-bold text-white placeholder-zinc-600 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition-all" 
+                        className="w-full bg-zinc-50 border border-zinc-200 rounded-xl h-11 pl-10 pr-4 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-black/5 transition-all text-zinc-800" 
                       />
                     </div>
                   )}
                 </div>
 
-                {/* ── INSUMOS TAB ── */}
-                {activeTab === 'insumos' && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {filteredInsumos.map((ins, idx) => {
-                      const isLow = ins.currentStock < 10;
-                      return (
-                        <div key={ins.id} className={`group bg-white/[0.03] border ${isLow ? 'border-rose-500/30 bg-rose-500/5' : 'border-white/5'} rounded-3xl p-5 flex items-center justify-between hover:bg-white/[0.06] transition-all`}>
-                          <div className="flex items-center gap-4">
-                            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-2xl shadow-inner ${isLow ? 'bg-rose-500/20 text-rose-500' : 'bg-black/30'}`}>
-                              {getProductIcon(ins.name)}
-                            </div>
-                            <div>
-                              <h4 className="font-black text-lg uppercase tracking-tight leading-none mb-1 text-white">{ins.name}</h4>
-                              <div className="flex items-center gap-2">
-                                <span className={`w-2 h-2 rounded-full ${isLow ? 'bg-rose-500 animate-pulse' : 'bg-emerald-500'}`}></span>
-                                <span className="text-zinc-500 text-[10px] font-black uppercase tracking-[0.15em]">{ins.unit}</span>
+                {/* Body of Workspace */}
+                <div className="p-6 md:p-8">
+
+                  {/* ── INSUMOS TAB ── */}
+                  {activeTab === 'insumos' && (
+                    <div className="grid grid-cols-1 gap-3">
+                      {filteredInsumos.map((ins) => {
+                        const isLow = ins.currentStock < 10;
+                        return (
+                          <div key={ins.id} className={`group bg-white border ${isLow ? 'border-red-200 bg-red-50/30' : 'border-zinc-200/60'} rounded-xl p-4 flex items-center justify-between hover:border-zinc-300 transition-colors`}>
+                            <div className="flex items-center gap-4">
+                              <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${isLow ? 'bg-red-100 text-red-600' : 'bg-zinc-100 text-zinc-600'}`}>
+                                <Package size={18} />
                               </div>
-                            </div>
-                          </div>
-                          
-                          <div className="flex items-center bg-black/50 rounded-full p-1 border border-white/10">
-                            <button onClick={() => handleUpdateInsumoStock(ins.id, ins.currentStock - 1)} className="w-8 h-8 rounded-full hover:bg-white/10 flex items-center justify-center font-black text-rose-400 transition-colors">-</button>
-                            <input 
-                              type="number"
-                              value={ins.currentStock}
-                              onChange={(e) => handleUpdateInsumoStock(ins.id, e.target.value)}
-                              className="w-12 bg-transparent text-center font-black text-lg focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none text-white"
-                            />
-                            <button onClick={() => handleUpdateInsumoStock(ins.id, ins.currentStock + 1)} className="w-8 h-8 rounded-full hover:bg-white/10 flex items-center justify-center font-black text-emerald-400 transition-colors">+</button>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-
-                {/* ── RECIPES TAB ── */}
-                {activeTab === 'recipes' && (
-                  <div className="space-y-8">
-                     <div className="flex gap-3 overflow-x-auto pb-4 scrollbar-hide snap-x">
-                       {allProducts.map(prod => (
-                          <button 
-                            key={prod.id} 
-                            onClick={() => setSelectedProduct(prod.id)}
-                            className={`snap-start px-8 py-4 rounded-full whitespace-nowrap font-black text-xs uppercase tracking-widest transition-all duration-300 ${
-                              selectedProduct === prod.id 
-                              ? 'bg-amber-400 text-black shadow-lg shadow-amber-500/20 scale-105' 
-                              : 'bg-white/5 border border-white/10 text-zinc-400 hover:text-white'
-                            }`}
-                          >
-                            {prod.name}
-                          </button>
-                       ))}
-                     </div>
-
-                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {insumos.map(ins => {
-                          const currentVal = currentRecipe.find(r => r.insumoId === ins.id)?.quantity || '';
-                          const isActive = currentVal !== '' && currentVal > 0;
-                          
-                          return (
-                            <div key={ins.id} className={`p-5 rounded-3xl border transition-colors flex justify-between items-center ${isActive ? 'bg-amber-400/10 border-amber-400/30' : 'bg-black/20 border-white/5'}`}>
                               <div>
-                                 <h5 className={`font-black uppercase tracking-tight text-lg mb-1 ${isActive ? 'text-amber-400' : 'text-zinc-300'}`}>{ins.name}</h5>
-                                 <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">{ins.unit}</span>
+                                <h4 className="font-medium text-zinc-900 text-base">{ins.name}</h4>
+                                <span className="text-xs text-zinc-500">{ins.unit}</span>
                               </div>
+                            </div>
+                            
+                            <div className="flex items-center gap-1 bg-zinc-50 rounded-lg p-1 border border-zinc-200/60">
+                              <button onClick={() => handleUpdateInsumoStock(ins.id, ins.currentStock - 1)} className="w-8 h-8 rounded-md hover:bg-white hover:shadow-sm flex items-center justify-center text-zinc-600 transition-all">-</button>
                               <input 
                                 type="number"
-                                step="0.01"
-                                value={currentVal}
-                                placeholder="0.0"
-                                onChange={e => handleRecipeChange(ins.id, e.target.value)}
-                                className={`w-24 px-4 py-3 rounded-2xl text-center font-black focus:outline-none text-lg transition-colors ${
-                                  isActive ? 'bg-amber-400 text-black' : 'bg-black/50 text-white border border-white/10 focus:border-amber-400'
-                                }`}
+                                value={ins.currentStock}
+                                onChange={(e) => handleUpdateInsumoStock(ins.id, e.target.value)}
+                                className="w-16 bg-transparent text-center font-medium text-base focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none text-zinc-900"
                               />
+                              <button onClick={() => handleUpdateInsumoStock(ins.id, ins.currentStock + 1)} className="w-8 h-8 rounded-md hover:bg-white hover:shadow-sm flex items-center justify-center text-zinc-600 transition-all">+</button>
                             </div>
-                          );
-                        })}
-                     </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
 
-                     <button onClick={handleSaveRecipe} className="w-full mt-6 bg-amber-400 hover:bg-amber-300 text-black py-5 rounded-full font-black uppercase tracking-[0.2em] shadow-xl shadow-amber-500/20 flex items-center justify-center gap-3 transition-transform active:scale-95">
-                       <Database size={20} /> Actualizar Matriz de Producto
-                     </button>
-                  </div>
-                )}
+                  {/* ── RECIPES TAB ── */}
+                  {activeTab === 'recipes' && (
+                    <div className="space-y-8">
+                       <div className="flex flex-wrap gap-2">
+                         {allProducts.map(prod => (
+                            <button 
+                              key={prod.id} 
+                              onClick={() => setSelectedProduct(prod.id)}
+                              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                                selectedProduct === prod.id 
+                                ? 'bg-zinc-900 text-white' 
+                                : 'bg-white border border-zinc-200 text-zinc-600 hover:bg-zinc-50'
+                              }`}
+                            >
+                              {prod.name}
+                            </button>
+                         ))}
+                       </div>
 
-                {/* ── AUDITORIA TAB ── */}
-                {activeTab === 'audit' && (
-                  <div className="space-y-6">
-                     <div className="bg-rose-500/10 border border-rose-500/20 rounded-3xl p-6 flex flex-col md:flex-row items-center justify-between gap-6">
-                        <div>
-                          <h4 className="text-xl font-black text-rose-500 uppercase tracking-tight mb-2">Zona de Riesgo</h4>
-                          <p className="text-rose-400/80 text-xs font-bold leading-relaxed max-w-md">
-                            La conciliación actualizará de forma destructiva las cantidades en la base de datos central. Verifica dos veces tus varianzas.
-                          </p>
-                        </div>
-                        <button onClick={handleReconcile} className="w-full md:w-auto bg-rose-600 hover:bg-rose-500 text-white px-10 py-4 rounded-full font-black text-sm uppercase tracking-widest transition-transform active:scale-95 shadow-lg shadow-rose-900/50 flex items-center justify-center gap-3 shrink-0">
-                           <Zap size={18} /> Ejecutar Conciliación
-                        </button>
-                     </div>
-
-                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8">
-                        {insumos.map((ins) => {
-                          const fisico = parseFloat(auditCounts[ins.id] ?? ins.currentStock) || 0;
-                          const diff = fisico - parseFloat(ins.currentStock);
-                          const isMerma = diff < 0;
-                          
-                          return (
-                            <div key={ins.id} className="bg-black/30 p-5 rounded-3xl border border-white/5 flex gap-4 items-center">
-                              <div className="flex-1">
-                                 <h4 className="font-black uppercase tracking-tight text-white mb-1">{ins.name}</h4>
-                                 <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Sistema: {ins.currentStock} {ins.unit}</span>
-                              </div>
-                              <div className="flex items-center gap-4">
-                                <div className="text-right">
-                                   <span className="text-[9px] font-black text-zinc-600 uppercase tracking-widest block mb-2">Varianza</span>
-                                   <span className={`font-black text-xl tabular-nums ${isMerma ? 'text-rose-500' : (diff > 0 ? 'text-emerald-500' : 'text-zinc-600')}`}>
-                                     {diff > 0 ? '+' : ''}{diff.toFixed(1)}
-                                   </span>
+                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          {insumos.map(ins => {
+                            const currentVal = currentRecipe.find(r => r.insumoId === ins.id)?.quantity || '';
+                            const isActive = currentVal !== '' && currentVal > 0;
+                            
+                            return (
+                              <div key={ins.id} className={`p-4 rounded-xl border transition-colors flex justify-between items-center ${isActive ? 'border-zinc-300 bg-zinc-50' : 'border-zinc-100 bg-white'}`}>
+                                <div>
+                                   <h5 className="font-medium text-sm text-zinc-900">{ins.name}</h5>
+                                   <span className="text-xs text-zinc-500">{ins.unit} requeridos</span>
                                 </div>
                                 <input 
-                                  type="number" 
-                                  step="0.1"
-                                  value={auditCounts[ins.id] ?? ins.currentStock}
-                                  onChange={e => setAuditCounts({...auditCounts, [ins.id]: e.target.value})}
-                                  className="w-20 bg-white/5 border border-white/10 rounded-2xl p-3 text-center font-black text-xl text-white focus:border-rose-500 focus:outline-none transition-colors"
-                                 />
+                                  type="number"
+                                  step="0.01"
+                                  value={currentVal}
+                                  placeholder="0"
+                                  onChange={e => handleRecipeChange(ins.id, e.target.value)}
+                                  className="w-20 px-3 py-2 bg-white border border-zinc-200 rounded-lg text-center text-sm font-medium focus:ring-2 focus:ring-zinc-900 focus:outline-none transition-shadow text-zinc-900"
+                                />
                               </div>
+                            );
+                          })}
+                       </div>
+
+                       <div className="pt-4 flex justify-end">
+                         <button onClick={handleSaveRecipe} className="bg-zinc-900 hover:bg-zinc-800 text-white px-6 py-3 rounded-xl text-sm font-medium transition-colors flex items-center gap-2">
+                           <Save size={16} /> Guardar Receta
+                         </button>
+                       </div>
+                    </div>
+                  )}
+
+                  {/* ── AUDITORIA TAB ── */}
+                  {activeTab === 'audit' && (
+                    <div className="space-y-6">
+                       <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
+                          <div className="flex gap-4 items-start">
+                            <AlertCircle className="text-yellow-600 shrink-0 mt-0.5" size={20} />
+                            <div>
+                              <h4 className="text-sm font-semibold text-yellow-800 mb-1">Advertencia de Modificación</h4>
+                              <p className="text-sm text-yellow-700/80">Esta acción sobrescribirá las existencias actuales de forma permanente.</p>
                             </div>
-                          );
-                        })}
-                     </div>
-                  </div>
-                )}
+                          </div>
+                          <button onClick={handleReconcile} className="w-full sm:w-auto bg-yellow-400 hover:bg-yellow-500 text-yellow-900 px-6 py-2.5 rounded-lg text-sm font-medium transition-colors whitespace-nowrap">
+                             Aplicar Conciliación
+                          </button>
+                       </div>
+
+                       <div className="grid grid-cols-1 gap-3">
+                          {insumos.map((ins) => {
+                            const fisico = parseFloat(auditCounts[ins.id] ?? ins.currentStock) || 0;
+                            const diff = fisico - parseFloat(ins.currentStock);
+                            const isMerma = diff < 0;
+                            
+                            return (
+                              <div key={ins.id} className="bg-white p-4 rounded-xl border border-zinc-200 flex flex-wrap gap-4 items-center justify-between hover:border-zinc-300 transition-colors">
+                                <div className="flex-1 min-w-[120px]">
+                                   <h4 className="font-medium text-zinc-900 text-sm">{ins.name}</h4>
+                                   <span className="text-xs text-zinc-500">Sistema: {ins.currentStock} {ins.unit}</span>
+                                </div>
+                                
+                                <div className="flex items-center gap-6">
+                                  <div className="text-right flex flex-col">
+                                     <span className="text-[10px] uppercase font-semibold tracking-wider text-zinc-400 mb-0.5">Dif.</span>
+                                     <span className={`font-semibold text-sm ${isMerma ? 'text-red-500' : (diff > 0 ? 'text-emerald-500' : 'text-zinc-400')}`}>
+                                       {diff > 0 ? '+' : ''}{diff.toFixed(1)}
+                                     </span>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                     <span className="text-[10px] uppercase font-semibold tracking-wider text-zinc-400">Real ({ins.unit})</span>
+                                     <input 
+                                       type="number" 
+                                       step="0.1"
+                                       value={auditCounts[ins.id] ?? ins.currentStock}
+                                       onChange={e => setAuditCounts({...auditCounts, [ins.id]: e.target.value})}
+                                       className="w-20 bg-zinc-50 border border-zinc-200 focus:bg-white rounded-lg p-2 text-center text-sm font-semibold text-zinc-900 focus:ring-2 focus:ring-zinc-900 focus:outline-none transition-all"
+                                      />
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                       </div>
+                    </div>
+                  )}
+
+                </div>
               </div>
             </div>
 
-            {/* ────── COMMAND CENTER (RIGHT SIDEBAR, SPAN 4) ────── */}
-            <div className="xl:col-span-4 flex flex-col gap-6">
+            {/* ────── RIGHT SIDEBAR (SPAN 4) ────── */}
+            <div className="lg:col-span-4 flex flex-col gap-6">
               
-              {/* STATUS WIDGET */}
-              <div className="bg-white/[0.02] border border-white/5 rounded-[32px] p-8 backdrop-blur-3xl relative overflow-hidden">
-                <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-emerald-400 to-emerald-600"></div>
-                <div className="flex items-center justify-between mb-8">
-                  <h3 className="text-lg font-black uppercase tracking-widest text-zinc-300">Terminal Activa</h3>
-                  <div className="bg-emerald-500/20 text-emerald-400 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
-                    <span className="relative flex h-2 w-2">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                    </span>
-                    En línea
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <button className="w-full bg-white/5 hover:bg-white/10 border border-white/10 h-16 rounded-2xl font-black uppercase tracking-widest text-xs text-white transition-colors flex items-center justify-center gap-3">
-                    <RefreshCw size={16} /> Forzar Sincronización
-                  </button>
-                  <button className="w-full bg-rose-600 hover:bg-rose-500 h-16 rounded-2xl font-black uppercase tracking-widest text-xs text-white transition-colors shadow-lg shadow-rose-900/30 flex items-center justify-center gap-3">
-                    <AlertCircle size={16} /> Reportar Merma Crítica
-                  </button>
-                </div>
-              </div>
-
               {/* QUICK ADD WIDGET */}
-              <div className="bg-gradient-to-b from-white/[0.05] to-transparent border border-white/5 rounded-[32px] p-8 backdrop-blur-3xl">
-                <h3 className="text-lg font-black uppercase tracking-widest text-zinc-300 mb-6 flex items-center gap-3">
-                  <Plus size={20} className="text-amber-400" />
-                  Alta de Insumo
+              <div className="bg-white border border-zinc-200/80 rounded-2xl p-6 shadow-sm">
+                <h3 className="text-sm font-semibold text-zinc-900 mb-5 flex items-center gap-2">
+                  <Box size={16} className="text-zinc-400" />
+                  Nuevo Artículo
                 </h3>
                 
-                <form onSubmit={handleAddInsumo} className="space-y-5">
+                <form onSubmit={handleAddInsumo} className="space-y-4">
                    <div>
-                     <label className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 block mb-2">Nombre del Componente</label>
+                     <label className="text-xs font-semibold text-zinc-500 mb-1.5 block">Nombre</label>
                      <input 
                        type="text" 
-                       placeholder="Ej. Salsa Secreta XL" 
+                       placeholder="Salsa BBQ" 
                        value={newInsumo.name} 
                        onChange={e => setNewInsumo({...newInsumo, name: e.target.value})} 
-                       className="w-full bg-black/50 border border-white/10 rounded-2xl p-4 text-sm font-bold text-white focus:outline-none focus:border-amber-400 transition-colors" 
+                       className="w-full bg-zinc-50 border border-zinc-200 rounded-xl p-3 text-sm text-zinc-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-zinc-900 transition-all" 
                        required 
                      />
                    </div>
                    <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 block mb-2">Unidad (Kg/Pza)</label>
+                        <label className="text-xs font-semibold text-zinc-500 mb-1.5 block">Unidad</label>
                         <input 
                           type="text" 
-                          placeholder="pza" 
+                          placeholder="Kg, Pza" 
                           value={newInsumo.unit} 
                           onChange={e => setNewInsumo({...newInsumo, unit: e.target.value})} 
-                          className="w-full bg-black/50 border border-white/10 rounded-2xl p-4 text-sm font-bold text-white focus:outline-none focus:border-amber-400 transition-colors" 
+                          className="w-full bg-zinc-50 border border-zinc-200 rounded-xl p-3 text-sm text-zinc-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-zinc-900 transition-all" 
                           required 
                         />
                       </div>
                       <div>
-                        <label className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 block mb-2">Stock Inicial</label>
+                        <label className="text-xs font-semibold text-zinc-500 mb-1.5 block">Stock Incial</label>
                         <input 
                           type="number" 
                           step="0.1" 
                           value={newInsumo.currentStock} 
                           onChange={e => setNewInsumo({...newInsumo, currentStock: e.target.value})} 
-                          className="w-full bg-black/50 border border-white/10 rounded-2xl p-4 text-sm font-bold text-white focus:outline-none focus:border-amber-400 transition-colors" 
+                          className="w-full bg-zinc-50 border border-zinc-200 rounded-xl p-3 text-sm text-zinc-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-zinc-900 transition-all" 
                         />
                       </div>
                    </div>
                    <button 
                      type="submit" 
                      disabled={saving} 
-                     className="w-full mt-2 bg-white text-black h-14 rounded-2xl font-black uppercase tracking-[0.2em] text-xs hover:bg-zinc-200 active:scale-95 transition-all shadow-xl"
+                     className="w-full mt-2 bg-zinc-900 text-white py-3 rounded-xl text-sm font-medium hover:bg-zinc-800 transition-colors flex items-center justify-center gap-2"
                    >
-                     {saving ? 'Registrando...' : 'Inyectar al Sistema'}
+                     <Plus size={16} />
+                     {saving ? 'Guardando...' : 'Crear Artículo'}
                    </button>
                 </form>
+              </div>
+
+              {/* QUICK STATS WIDGET */}
+              <div className="bg-zinc-900 rounded-2xl p-6 text-white shadow-md">
+                 <h3 className="text-sm font-medium text-zinc-400 mb-4 flex items-center gap-2">
+                    Estatus del Sistema
+                 </h3>
+                 <div className="space-y-4">
+                    <div className="flex justify-between items-center border-b border-zinc-800 pb-3">
+                       <span className="text-sm">Total de Componentes</span>
+                       <span className="font-semibold">{insumos.length}</span>
+                    </div>
+                    <div className="flex justify-between items-center border-b border-zinc-800 pb-3">
+                       <span className="text-sm">Recetas Configuradas</span>
+                       <span className="font-semibold">{recipes.length}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                       <span className="text-sm">Sincronización</span>
+                       <div className="flex items-center gap-2">
+                          <span className="relative flex h-2 w-2">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                          </span>
+                          <span className="text-emerald-400 text-sm font-medium">Activa</span>
+                       </div>
+                    </div>
+                 </div>
               </div>
 
             </div>
           </div>
         )}
       </main>
-
-      <footer className="max-w-7xl mx-auto px-6 mt-20 pt-10 border-t border-white/5 text-center">
-        <p className="text-[10px] font-black uppercase tracking-[0.5em] text-zinc-600">
-          Cheeseburgers OS • Advanced Logistics
-        </p>
-      </footer>
-
     </div>
   );
 };
