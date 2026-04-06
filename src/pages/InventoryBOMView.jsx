@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { mockProducts, MODIFIERS, CATEGORIES } from '../data/mockProducts';
-import { ArrowLeft, Save, Plus, Beef, Check, Package, RefreshCw, AlertCircle, Trash2 } from 'lucide-react';
+import { mockProducts, MODIFIERS } from '../data/mockProducts';
+import { Save, Beef, Check, Package, RefreshCw, AlertCircle, Search, Activity, Box, Database, Zap } from 'lucide-react';
 
 const HOST_URL = import.meta.env.VITE_API_URL || `http://${window.location.hostname}:3001`;
 const API_URL = `${HOST_URL}/api`;
@@ -15,23 +15,19 @@ const allProducts = [
 const InventoryBOMView = () => {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
-  const [activeTab, setActiveTab] = useState('insumos'); // insumos | recipes | audit
+  const [activeTab, setActiveTab] = useState('insumos');
 
   const [insumos, setInsumos] = useState([]);
   const [recipes, setRecipes] = useState([]);
-  
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  // States for 'Insumos' Tab
+  // States
   const [newInsumo, setNewInsumo] = useState({ name: '', unit: '', currentStock: 0 });
-
-  // States for 'Recetas' Tab
   const [selectedProduct, setSelectedProduct] = useState(allProducts[0]?.id || '');
   const [currentRecipe, setCurrentRecipe] = useState([]);
-
-  // States for 'Auditoría' Tab
   const [auditCounts, setAuditCounts] = useState({});
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     fetchData();
@@ -47,7 +43,6 @@ const InventoryBOMView = () => {
       setInsumos(insData);
       setRecipes(recData);
       
-      // Initialize audit counts
       const counts = {};
       insData.forEach(ins => {
         counts[ins.id] = ins.currentStock;
@@ -60,7 +55,6 @@ const InventoryBOMView = () => {
     }
   };
 
-  // ── INSUMOS ACTIONS ──
   const handleAddInsumo = async (e) => {
     e.preventDefault();
     if (!newInsumo.name || !newInsumo.unit) return;
@@ -97,7 +91,6 @@ const InventoryBOMView = () => {
     }
   };
 
-  // ── RECIPES ACTIONS ──
   useEffect(() => {
     if (selectedProduct) {
       const prodRecipes = recipes.filter(r => r.productId === selectedProduct);
@@ -138,9 +131,8 @@ const InventoryBOMView = () => {
     }
   };
 
-  // ── AUDITORÍA ACTIONS ──
   const handleReconcile = async () => {
-    if (!window.confirm('¿Seguro que deseas cerrar la auditoría de inventario? Esto actualizará las existencias en el sistema.')) return;
+    if (!window.confirm('¿Seguro que deseas procesar la auditoría? Esto actualizará las existencias en el sistema.')) return;
     setSaving(true);
     try {
       const payload = Object.keys(auditCounts).map(id => ({
@@ -166,26 +158,6 @@ const InventoryBOMView = () => {
     }
   };
 
-  // ── KEYBOARD NAVIGATION ──
-  const handleKeyDown = (e, index, prefix) => {
-    if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      const nextInput = document.querySelector(`input[data-nav="${prefix}-${index + 1}"]`);
-      if (nextInput) {
-        nextInput.focus();
-        setTimeout(() => nextInput.select(), 0);
-      }
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      const prevInput = document.querySelector(`input[data-nav="${prefix}-${index - 1}"]`);
-      if (prevInput) {
-        prevInput.focus();
-        setTimeout(() => prevInput.select(), 0);
-      }
-    }
-  };
-
-  // ── HELPERS ──
   const getProductIcon = (name = '') => {
     const n = name.toLowerCase();
     if (n.includes('pan')) return '🍔';
@@ -199,15 +171,15 @@ const InventoryBOMView = () => {
 
   const CircularGauge = ({ value, label, color }) => {
     const strokeWidth = 8;
-    const radius = 36;
+    const radius = 32;
     const circ = 2 * Math.PI * radius;
     const offset = circ - (value / 100) * circ;
     
     return (
-      <div className="flex flex-col items-center gap-2">
-        <div className="relative w-24 h-24">
-          <svg className="w-full h-full transform -rotate-90">
-            <circle stroke="rgba(255,255,255,0.05)" strokeWidth={strokeWidth} fill="transparent" r={radius} cx="48" cy="48" />
+      <div className="flex flex-col items-center gap-3 bg-white/5 p-4 rounded-3xl border border-white/10 hover:bg-white/10 transition-colors">
+        <div className="relative w-20 h-20">
+          <svg className="w-full h-full transform -rotate-90 drop-shadow-md">
+            <circle stroke="rgba(255,255,255,0.05)" strokeWidth={strokeWidth} fill="transparent" r={radius} cx="40" cy="40" />
             <circle 
               stroke={color} 
               strokeWidth={strokeWidth} 
@@ -215,276 +187,362 @@ const InventoryBOMView = () => {
               strokeDashoffset={offset} 
               strokeLinecap="round" 
               fill="transparent" 
-              r={radius} cx="48" cy="48" 
-              style={{ transition: 'stroke-dashoffset 0.5s ease' }}
+              r={radius} cx="40" cy="40" 
+              className="transition-all duration-1000 ease-out"
             />
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center">
             <span className="text-xl font-black text-white">{value}%</span>
           </div>
         </div>
-        <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">{label}</span>
+        <span className="text-xs font-bold text-zinc-400 uppercase tracking-widest text-center leading-tight">{label}</span>
       </div>
     );
   };
 
-
-  // ── RENDER ──
   if (!currentUser?.role?.includes('admin')) {
     return (
-      <div className="flex flex-col items-center justify-center p-10 h-full">
+      <div className="flex flex-col items-center justify-center h-screen bg-zinc-900 text-white">
         <AlertCircle size={48} className="text-rose-500 mb-4" />
-        <h2 className="text-xl font-bold">Acceso Denegado</h2>
-        <p className="text-zinc-400 mt-2">Solo el administrador puede acceder a esta área.</p>
-        <button onClick={() => navigate(-1)} className="btn mt-6">Volver</button>
+        <h2 className="text-2xl font-bold">Acceso Denegado</h2>
       </div>
     );
   }
 
+  const filteredInsumos = insumos.filter(ins => ins.name.toLowerCase().includes(searchQuery.toLowerCase()));
+
   return (
-    <div className="min-h-screen bg-[#0E1116] text-white p-4 sm:p-8 font-sans" style={{ backgroundImage: 'radial-gradient(circle at top right, rgba(218,41,28,0.05), transparent), radial-gradient(circle at bottom left, rgba(255,199,44,0.05), transparent)' }}>
+    <div className="min-h-screen bg-[#0E1218] text-zinc-100 font-sans tracking-tight pb-20 selection:bg-rose-500/30 overflow-x-hidden">
       
-      {/* ── HEADER & NAVIGATION ── */}
-      <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-start sm:items-center mb-10 gap-6">
-        <div>
-          <div className="flex items-center gap-3 mb-1">
-            <Beef size={32} className="text-[var(--primary-color)]" />
-            <h1 className="text-4xl font-black uppercase tracking-tighter">BOM Dashboard</h1>
-          </div>
-          <p className="text-[var(--primary-color)] text-xs font-black tracking-[0.2em] uppercase">fernando es putito</p>
-        </div>
-        <div className="bg-[#1A1F26] p-1.5 rounded-2xl flex gap-1 border border-white/5">
-           {['insumos', 'recipes', 'audit'].map(tab => (
+      {/* ── BACKGROUND GLOWS ── */}
+      <div className="fixed top-0 left-1/4 w-96 h-96 bg-rose-600/10 rounded-full blur-[120px] pointer-events-none"></div>
+      <div className="fixed bottom-0 right-1/4 w-[500px] h-[500px] bg-amber-500/10 rounded-full blur-[150px] pointer-events-none"></div>
+
+      {/* ── TOP NAVIGATION ── */}
+      <nav className="sticky top-0 z-50 bg-[#0E1218]/80 backdrop-blur-3xl border-b border-white/5 pt-safe mb-8 supports-[backdrop-filter]:bg-[#0E1218]/60">
+        <div className="max-w-7xl mx-auto px-6 py-4 flex flex-col md:flex-row justify-between items-center gap-6">
+          <div className="flex items-center gap-4">
              <button 
-               key={tab}
-               onClick={() => setActiveTab(tab)}
-               className={`px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${activeTab === tab ? 'bg-white text-black shadow-lg scale-105' : 'text-zinc-500 hover:text-white'}`}
+               onClick={() => navigate('/admin')} 
+               className="w-14 h-14 bg-gradient-to-tr from-rose-600 to-rose-500 rounded-2xl flex items-center justify-center shadow-lg shadow-rose-900/40 hover:scale-105 active:scale-95 transition-all group"
              >
-               {tab}
+               <Beef size={28} className="text-white group-hover:-rotate-12 transition-transform" />
              </button>
-           ))}
-        </div>
-      </div>
+             <div>
+               <h1 className="text-3xl md:text-4xl font-black text-white uppercase tracking-tighter loading-none">
+                 Intelligence V2
+               </h1>
+               <div className="flex items-center gap-2 mt-1">
+                 <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)] animate-pulse"></div>
+                 <span className="text-[11px] font-black text-zinc-400 uppercase tracking-[0.2em]">CORE Sincronizado</span>
+               </div>
+             </div>
+          </div>
 
-      {loading ? (
-        <div className="flex flex-col items-center justify-center py-40 gap-4">
-           <RefreshCw className="animate-spin text-[var(--primary-color)]" size={48} />
-           <span className="font-black text-xs uppercase tracking-widest opacity-50">Sincronizando Inventario...</span>
+          <div className="bg-black/40 p-1.5 rounded-full flex gap-1 border border-white/5 backdrop-blur-xl shrink-0">
+             {[
+               { id: 'insumos', label: 'Cámaras', icon: <Box size={16}/> },
+               { id: 'recipes', label: 'BOM / Fórmulas', icon: <Database size={16}/> },
+               { id: 'audit', label: 'Auditoría', icon: <Check size={16}/> }
+             ].map(tab => (
+               <button 
+                 key={tab.id}
+                 onClick={() => setActiveTab(tab.id)}
+                 className={`flex items-center gap-2 px-6 py-3 rounded-full text-xs font-black uppercase tracking-wider transition-all duration-300 ${
+                    activeTab === tab.id 
+                    ? 'bg-white text-black shadow-lg scale-100' 
+                    : 'text-zinc-400 hover:bg-white/10 hover:text-white'
+                 }`}
+               >
+                 {tab.icon}
+                 <span className="hidden sm:inline">{tab.label}</span>
+               </button>
+             ))}
+          </div>
         </div>
-      ) : (
-        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8">
-          
-          {/* ────── LEFT COLUMN: GAUGES & INVENTORY LEVELS ────── */}
-          <div className="lg:col-span-8 space-y-8">
+      </nav>
+
+      {/* ── MAIN LAYOUT ── */}
+      <main className="max-w-7xl mx-auto px-6 relative z-10">
+        
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-32 gap-6">
+             <Activity className="animate-pulse text-amber-500" size={64} />
+             <span className="font-black text-xs uppercase tracking-[0.4em] text-zinc-500">Calculando Existencias...</span>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
             
-            {/* 1. STOCK OVERVIEW (GAUGES) */}
-            <div className="glass-card p-8 bg-gradient-to-br from-white/[0.05] to-transparent">
-              <div className="flex justify-between items-center mb-10">
-                <h2 className="text-sm font-black uppercase tracking-[0.2em] text-white/50">1. Stock Overview</h2>
-                <span className="bg-rose-500/20 text-rose-500 text-[10px] font-black px-3 py-1 rounded-full uppercase">Running Low: Buns</span>
-              </div>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-8">
-                 <CircularGauge value={74} label="Big Mac Buns" color="#EB5757" />
-                 <CircularGauge value={89} label="Cheese" color="#F2994A" />
-                 <CircularGauge value={61} label="Beef Meat" color="#27AE60" />
-                 <CircularGauge value={55} label="Fries" color="#FFC72C" />
-              </div>
-              <div className="flex justify-center gap-1.5 mt-8">
-                <div className="w-1.5 h-1.5 rounded-full bg-white opacity-100"></div>
-                <div className="w-1.5 h-1.5 rounded-full bg-white opacity-20"></div>
-                <div className="w-1.5 h-1.5 rounded-full bg-white opacity-20"></div>
-              </div>
-            </div>
-
-            {/* 2. INVENTORY LEVELS (THE LIST) */}
-            <div className="glass-card p-4 sm:p-8">
-              <div className="flex justify-between items-center mb-8">
-                <h2 className="text-sm font-black uppercase tracking-[0.2em] text-white/50">Inventory Levels</h2>
-                <button className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2 opacity-50">Detailed List <Plus size={12} /></button>
-              </div>
-
+            {/* ────── CENTER CANVAS (SPAN 8) ────── */}
+            <div className="xl:col-span-8 flex flex-col gap-8">
+              
+              {/* TOP DASHBOARD CARDS */}
               {activeTab === 'insumos' && (
-                <div className="space-y-4">
-                  {insumos.map((ins, index) => {
-                    const status = ins.currentStock < 5 ? 'Low' : (ins.currentStock < 15 ? 'Check' : 'Good');
-                    const statusColor = status === 'Low' ? '#EB5757' : (status === 'Check' ? '#F2994A' : '#27AE60');
-                    
-                    return (
-                      <div key={ins.id} className="bg-white/[0.03] border border-white/5 rounded-[22px] p-4 flex flex-col sm:flex-row items-center gap-6 group hover:bg-white/[0.05] transition-all">
-                        <div className="w-16 h-16 bg-[#1A1F26] rounded-2xl flex items-center justify-center text-3xl shadow-inner">
-                          {getProductIcon(ins.name)}
-                        </div>
-                        <div className="flex-1 text-center sm:text-left">
-                          <h4 className="font-black text-lg leading-tight uppercase tracking-tight">{ins.name}</h4>
-                          <span className="text-[var(--text-muted)] text-[10px] font-black uppercase tracking-widest">{ins.currentStock} {ins.unit}</span>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <div className="flex items-center bg-white/5 rounded-full p-1 h-12 border border-white/5">
-                            <button onClick={() => handleUpdateInsumoStock(ins.id, ins.currentStock - 1)} className="w-10 h-10 rounded-full hover:bg-white/10 flex items-center justify-center font-black">-</button>
-                            <input 
-                              type="number"
-                              data-nav={`ins-v-${index}`}
-                              defaultValue={ins.currentStock}
-                              onBlur={(e) => handleUpdateInsumoStock(ins.id, e.target.value)}
-                              className="w-12 bg-transparent text-center font-black text-lg focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                            />
-                            <button onClick={() => handleUpdateInsumoStock(ins.id, ins.currentStock + 1)} className="w-10 h-10 rounded-full hover:bg-white/10 flex items-center justify-center font-black">+</button>
-                          </div>
-                          <button onClick={() => handleUpdateInsumoStock(ins.id, document.querySelector(`input[data-nav="ins-v-${index}"]`).value)} className="bg-rose-600 hover:bg-rose-500 text-white h-12 px-6 rounded-full font-black text-xs uppercase tracking-widest shadow-lg shadow-rose-900/20">Save</button>
-                          <div className="w-20 px-4 py-2 rounded-full text-center text-[10px] font-black uppercase tracking-widest" style={{ background: `${statusColor}20`, color: statusColor, border: `1px solid ${statusColor}40` }}>{status}</div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                  
-                  {/* ADD NEW INSUMO INLINE GLASS STYLE */}
-                  <form onSubmit={handleAddInsumo} className="bg-rose-600/10 border-2 border-dashed border-rose-600/30 rounded-[22px] p-8 flex flex-col sm:flex-row gap-4 items-center justify-center">
-                    <input type="text" placeholder="New Item Name" value={newInsumo.name} onChange={e => setNewInsumo({...newInsumo, name: e.target.value})} className="bg-transparent border-b-2 border-white/10 p-2 font-black uppercase tracking-widest focus:border-rose-500 focus:outline-none w-full sm:w-64" />
-                    <input type="text" placeholder="Unit" value={newInsumo.unit} onChange={e => setNewInsumo({...newInsumo, unit: e.target.value})} className="bg-transparent border-b-2 border-white/10 p-2 font-black uppercase tracking-widest focus:border-rose-500 focus:outline-none w-24" />
-                    <button type="submit" className="bg-white text-black h-12 px-10 rounded-full font-black text-xs uppercase tracking-widest hover:scale-105 transition-transform">Add Insumo</button>
-                  </form>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <CircularGauge value={74} label="Panes" color="#DA291C" />
+                  <CircularGauge value={89} label="Queso" color="#FFC72C" />
+                  <CircularGauge value={61} label="Carne" color="#10B981" />
+                  <CircularGauge value={55} label="Papas" color="#3B82F6" />
                 </div>
               )}
 
-              {activeTab === 'recipes' && (
-                <div className="space-y-6">
-                   <div className="flex gap-3 overflow-x-auto pb-4">
-                     {allProducts.map(prod => (
-                        <button 
-                          key={prod.id} 
-                          onClick={() => setSelectedProduct(prod.id)}
-                          className={`px-6 py-3 rounded-2xl whitespace-nowrap font-black text-xs uppercase tracking-widest border transition-all ${selectedProduct === prod.id ? 'bg-[#FFC72C] text-black border-transparent scale-105' : 'bg-white/5 border-white/10 text-white/50'}`}
-                        >
-                          {prod.name}
-                        </button>
-                     ))}
-                   </div>
-                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      {insumos.map(ins => {
-                        const currentVal = currentRecipe.find(r => r.insumoId === ins.id)?.quantity || '';
-                        return (
-                          <div key={ins.id} className="bg-white/[0.03] p-6 rounded-[22px] border border-white/5 flex items-center justify-between">
-                            <div>
-                               <h5 className="font-black uppercase tracking-wide text-white/80">{ins.name}</h5>
-                               <span className="text-[10px] font-black text-zinc-500 uppercase">{ins.unit}</span>
-                            </div>
-                            <input 
-                              type="number"
-                              step="0.001"
-                              value={currentVal}
-                              placeholder="0"
-                              onChange={e => handleRecipeChange(ins.id, e.target.value)}
-                              className="w-20 bg-[#1A1F26] px-3 py-3 rounded-xl text-center font-black text-rose-500 focus:outline-none border border-white/5"
-                            />
-                          </div>
-                        );
-                      })}
-                   </div>
-                   <button onClick={handleSaveRecipe} className="w-full bg-[#27AE60] hover:bg-[#2ecc71] text-white py-5 rounded-[22px] font-black uppercase tracking-widest shadow-xl shadow-emerald-900/20 flex items-center justify-center gap-3">
-                     <Save size={20} /> Guardar Receta Maestro
-                   </button>
+              {/* MAIN CONTENT AREA */}
+              <div className="bg-white/[0.02] border border-white/5 rounded-[32px] p-6 lg:p-10 backdrop-blur-3xl shadow-2xl relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-10 opacity-[0.02] pointer-events-none">
+                   <Database size={200} />
                 </div>
-              )}
-              {activeTab === 'audit' && (
-                <div className="space-y-6">
-                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
-                    <div>
-                      <h3 className="text-xl font-black uppercase tracking-tight">Audit Physical Stock</h3>
-                      <p className="text-[var(--text-muted)] text-[10px] font-black uppercase tracking-widest">Enter the actual count to reconcile inventory</p>
-                    </div>
-                    <button onClick={handleReconcile} className="bg-[#FFC72C] text-black px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-widest hover:scale-105 transition-transform shadow-lg shadow-amber-900/20 flex items-center gap-2">
-                       <Check size={18} /> Finalizar Auditoría
-                    </button>
+
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-6 relative z-10">
+                  <div>
+                    <h2 className="text-3xl font-black uppercase tracking-tight text-white mb-2">
+                       {activeTab === 'insumos' ? 'Gestión de Stock' : activeTab === 'recipes' ? 'Arquitectura de Recetas' : 'Arqueo Físico'}
+                    </h2>
+                    <p className="text-zinc-400 text-xs font-bold uppercase tracking-widest">
+                       {activeTab === 'insumos' ? 'Control de cajas y mililitros' : activeTab === 'recipes' ? 'Costo y Gramaje por platillo' : 'Conciliación de inventario ciego'}
+                    </p>
                   </div>
 
-                  <div className="grid grid-cols-1 gap-3">
-                    {insumos.map((ins, index) => {
-                      const fisico = parseFloat(auditCounts[ins.id] ?? ins.currentStock) || 0;
-                      const diff = fisico - parseFloat(ins.currentStock);
-                      const isMerma = diff < 0;
-                      const statusColor = isMerma ? '#EB5757' : (diff > 0 ? '#27AE60' : 'rgba(255,255,255,0.2)');
+                  {activeTab === 'insumos' && (
+                    <div className="relative w-full md:w-auto">
+                      <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500" size={18} />
+                      <input 
+                        type="text" 
+                        placeholder="Buscar componente..." 
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="w-full md:w-64 bg-black/40 border border-white/10 rounded-full h-12 pl-12 pr-6 text-sm font-bold text-white placeholder-zinc-600 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition-all" 
+                      />
+                    </div>
+                  )}
+                </div>
 
+                {/* ── INSUMOS TAB ── */}
+                {activeTab === 'insumos' && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {filteredInsumos.map((ins, idx) => {
+                      const isLow = ins.currentStock < 10;
                       return (
-                        <div key={ins.id} className="bg-white/[0.03] p-5 rounded-[22px] border border-white/5 flex flex-col sm:flex-row items-center gap-6">
-                          <div className="flex-1">
-                             <h4 className="font-black uppercase tracking-tighter text-lg">{ins.name}</h4>
-                             <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">System: {ins.currentStock} {ins.unit}</span>
+                        <div key={ins.id} className={`group bg-white/[0.03] border ${isLow ? 'border-rose-500/30 bg-rose-500/5' : 'border-white/5'} rounded-3xl p-5 flex items-center justify-between hover:bg-white/[0.06] transition-all`}>
+                          <div className="flex items-center gap-4">
+                            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-2xl shadow-inner ${isLow ? 'bg-rose-500/20 text-rose-500' : 'bg-black/30'}`}>
+                              {getProductIcon(ins.name)}
+                            </div>
+                            <div>
+                              <h4 className="font-black text-lg uppercase tracking-tight leading-none mb-1 text-white">{ins.name}</h4>
+                              <div className="flex items-center gap-2">
+                                <span className={`w-2 h-2 rounded-full ${isLow ? 'bg-rose-500 animate-pulse' : 'bg-emerald-500'}`}></span>
+                                <span className="text-zinc-500 text-[10px] font-black uppercase tracking-[0.15em]">{ins.unit}</span>
+                              </div>
+                            </div>
                           </div>
                           
-                          <div className="flex items-center gap-6">
-                            <div className="flex flex-col items-center">
-                              <span className="text-[9px] font-black uppercase text-zinc-600 mb-1">Physical Count</span>
-                              <input 
-                                type="number" 
-                                step="0.01"
-                                data-nav={`audit-${index}`}
-                                onKeyDown={(e) => handleKeyDown(e, index, 'audit')}
-                                value={auditCounts[ins.id] ?? ins.currentStock}
-                                onChange={e => setAuditCounts({...auditCounts, [ins.id]: e.target.value})}
-                                className="w-24 bg-white/5 border border-white/10 rounded-xl p-3 text-center font-black text-lg focus:border-[#FFC72C] focus:outline-none"
-                               />
-                            </div>
-
-                            <div className="w-32 text-right">
-                               <span className="text-[9px] font-black uppercase text-zinc-600 mb-1 block">Difference</span>
-                               <span className="font-black text-lg" style={{ color: statusColor }}>
-                                 {diff > 0 ? '+' : ''}{diff.toFixed(2)} {ins.unit}
-                               </span>
-                            </div>
+                          <div className="flex items-center bg-black/50 rounded-full p-1 border border-white/10">
+                            <button onClick={() => handleUpdateInsumoStock(ins.id, ins.currentStock - 1)} className="w-8 h-8 rounded-full hover:bg-white/10 flex items-center justify-center font-black text-rose-400 transition-colors">-</button>
+                            <input 
+                              type="number"
+                              value={ins.currentStock}
+                              onChange={(e) => handleUpdateInsumoStock(ins.id, e.target.value)}
+                              className="w-12 bg-transparent text-center font-black text-lg focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none text-white"
+                            />
+                            <button onClick={() => handleUpdateInsumoStock(ins.id, ins.currentStock + 1)} className="w-8 h-8 rounded-full hover:bg-white/10 flex items-center justify-center font-black text-emerald-400 transition-colors">+</button>
                           </div>
                         </div>
                       );
                     })}
                   </div>
-                </div>
-              )}
-            </div>
-          </div>
+                )}
 
-          {/* ────── RIGHT COLUMN: QUICK ACTIONS & SHIPMENTS ────── */}
-          <div className="lg:col-span-4 space-y-8">
-            
-            {/* QUICK ACTIONS */}
-            <div className="glass-card p-8 space-y-4">
-              <h2 className="text-sm font-black uppercase tracking-[0.2em] text-white/50 mb-4">Quick Actions</h2>
-              <button className="w-full bg-[#DA291C] h-16 rounded-2xl font-black uppercase tracking-[0.15em] text-sm hover:brightness-110 active:scale-95 transition-all shadow-lg shadow-rose-900/30">Receive Shipment</button>
-              <button className="w-full bg-[#FFC72C] h-16 rounded-2xl font-black uppercase tracking-[0.15em] text-sm text-black hover:brightness-110 active:scale-95 transition-all shadow-lg shadow-amber-900/20" onClick={() => setActiveTab('audit')}>Restock Items</button>
-              <button className="w-full bg-white h-16 rounded-2xl font-black uppercase tracking-[0.15em] text-sm text-black hover:brightness-90 active:scale-95 transition-all">Update Count</button>
-              <button className="w-full bg-[#DA291C]/20 border border-rose-500/30 h-16 rounded-2xl font-black uppercase tracking-[0.15em] text-sm text-rose-500 hover:bg-rose-500/10 active:scale-95 transition-all">Track Waste</button>
-            </div>
+                {/* ── RECIPES TAB ── */}
+                {activeTab === 'recipes' && (
+                  <div className="space-y-8">
+                     <div className="flex gap-3 overflow-x-auto pb-4 scrollbar-hide snap-x">
+                       {allProducts.map(prod => (
+                          <button 
+                            key={prod.id} 
+                            onClick={() => setSelectedProduct(prod.id)}
+                            className={`snap-start px-8 py-4 rounded-full whitespace-nowrap font-black text-xs uppercase tracking-widest transition-all duration-300 ${
+                              selectedProduct === prod.id 
+                              ? 'bg-amber-400 text-black shadow-lg shadow-amber-500/20 scale-105' 
+                              : 'bg-white/5 border border-white/10 text-zinc-400 hover:text-white'
+                            }`}
+                          >
+                            {prod.name}
+                          </button>
+                       ))}
+                     </div>
 
-            {/* INCOMING SHIPMENTS */}
-            <div className="glass-card p-8">
-              <h2 className="text-sm font-black uppercase tracking-[0.2em] text-white/50 mb-8">Incoming Shipments</h2>
-              <div className="space-y-4">
-                {[
-                  { id: '0201', supplier: 'DA291C', date: 'Tomorrow, 9 AM' },
-                  { id: '0202', supplier: 'Supplier', date: 'Tomorrow, 9 AM' },
-                  { id: '0203', supplier: 'DA291C', date: 'Tomorrow, 9 AM' }
-                ].map((ship, i) => (
-                  <div key={i} className="bg-white/5 rounded-[22px] p-5 border border-white/5">
-                    <div className="flex justify-between items-start mb-2">
-                       <span className="text-[10px] font-black text-white/20 tracking-widest">{ship.id}</span>
-                       <button className="text-[9px] font-black uppercase bg-white/10 px-2 py-1 rounded-md tracking-widest">View Detail</button>
-                    </div>
-                    <h4 className="font-black text-sm uppercase mb-1">{ship.supplier}</h4>
-                    <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">{ship.date}</span>
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {insumos.map(ins => {
+                          const currentVal = currentRecipe.find(r => r.insumoId === ins.id)?.quantity || '';
+                          const isActive = currentVal !== '' && currentVal > 0;
+                          
+                          return (
+                            <div key={ins.id} className={`p-5 rounded-3xl border transition-colors flex justify-between items-center ${isActive ? 'bg-amber-400/10 border-amber-400/30' : 'bg-black/20 border-white/5'}`}>
+                              <div>
+                                 <h5 className={`font-black uppercase tracking-tight text-lg mb-1 ${isActive ? 'text-amber-400' : 'text-zinc-300'}`}>{ins.name}</h5>
+                                 <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">{ins.unit}</span>
+                              </div>
+                              <input 
+                                type="number"
+                                step="0.01"
+                                value={currentVal}
+                                placeholder="0.0"
+                                onChange={e => handleRecipeChange(ins.id, e.target.value)}
+                                className={`w-24 px-4 py-3 rounded-2xl text-center font-black focus:outline-none text-lg transition-colors ${
+                                  isActive ? 'bg-amber-400 text-black' : 'bg-black/50 text-white border border-white/10 focus:border-amber-400'
+                                }`}
+                              />
+                            </div>
+                          );
+                        })}
+                     </div>
+
+                     <button onClick={handleSaveRecipe} className="w-full mt-6 bg-amber-400 hover:bg-amber-300 text-black py-5 rounded-full font-black uppercase tracking-[0.2em] shadow-xl shadow-amber-500/20 flex items-center justify-center gap-3 transition-transform active:scale-95">
+                       <Database size={20} /> Actualizar Matriz de Producto
+                     </button>
                   </div>
-                ))}
+                )}
+
+                {/* ── AUDITORIA TAB ── */}
+                {activeTab === 'audit' && (
+                  <div className="space-y-6">
+                     <div className="bg-rose-500/10 border border-rose-500/20 rounded-3xl p-6 flex flex-col md:flex-row items-center justify-between gap-6">
+                        <div>
+                          <h4 className="text-xl font-black text-rose-500 uppercase tracking-tight mb-2">Zona de Riesgo</h4>
+                          <p className="text-rose-400/80 text-xs font-bold leading-relaxed max-w-md">
+                            La conciliación actualizará de forma destructiva las cantidades en la base de datos central. Verifica dos veces tus varianzas.
+                          </p>
+                        </div>
+                        <button onClick={handleReconcile} className="w-full md:w-auto bg-rose-600 hover:bg-rose-500 text-white px-10 py-4 rounded-full font-black text-sm uppercase tracking-widest transition-transform active:scale-95 shadow-lg shadow-rose-900/50 flex items-center justify-center gap-3 shrink-0">
+                           <Zap size={18} /> Ejecutar Conciliación
+                        </button>
+                     </div>
+
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8">
+                        {insumos.map((ins) => {
+                          const fisico = parseFloat(auditCounts[ins.id] ?? ins.currentStock) || 0;
+                          const diff = fisico - parseFloat(ins.currentStock);
+                          const isMerma = diff < 0;
+                          
+                          return (
+                            <div key={ins.id} className="bg-black/30 p-5 rounded-3xl border border-white/5 flex gap-4 items-center">
+                              <div className="flex-1">
+                                 <h4 className="font-black uppercase tracking-tight text-white mb-1">{ins.name}</h4>
+                                 <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Sistema: {ins.currentStock} {ins.unit}</span>
+                              </div>
+                              <div className="flex items-center gap-4">
+                                <div className="text-right">
+                                   <span className="text-[9px] font-black text-zinc-600 uppercase tracking-widest block mb-2">Varianza</span>
+                                   <span className={`font-black text-xl tabular-nums ${isMerma ? 'text-rose-500' : (diff > 0 ? 'text-emerald-500' : 'text-zinc-600')}`}>
+                                     {diff > 0 ? '+' : ''}{diff.toFixed(1)}
+                                   </span>
+                                </div>
+                                <input 
+                                  type="number" 
+                                  step="0.1"
+                                  value={auditCounts[ins.id] ?? ins.currentStock}
+                                  onChange={e => setAuditCounts({...auditCounts, [ins.id]: e.target.value})}
+                                  className="w-20 bg-white/5 border border-white/10 rounded-2xl p-3 text-center font-black text-xl text-white focus:border-rose-500 focus:outline-none transition-colors"
+                                 />
+                              </div>
+                            </div>
+                          );
+                        })}
+                     </div>
+                  </div>
+                )}
               </div>
             </div>
 
+            {/* ────── COMMAND CENTER (RIGHT SIDEBAR, SPAN 4) ────── */}
+            <div className="xl:col-span-4 flex flex-col gap-6">
+              
+              {/* STATUS WIDGET */}
+              <div className="bg-white/[0.02] border border-white/5 rounded-[32px] p-8 backdrop-blur-3xl relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-emerald-400 to-emerald-600"></div>
+                <div className="flex items-center justify-between mb-8">
+                  <h3 className="text-lg font-black uppercase tracking-widest text-zinc-300">Terminal Activa</h3>
+                  <div className="bg-emerald-500/20 text-emerald-400 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                    </span>
+                    En línea
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <button className="w-full bg-white/5 hover:bg-white/10 border border-white/10 h-16 rounded-2xl font-black uppercase tracking-widest text-xs text-white transition-colors flex items-center justify-center gap-3">
+                    <RefreshCw size={16} /> Forzar Sincronización
+                  </button>
+                  <button className="w-full bg-rose-600 hover:bg-rose-500 h-16 rounded-2xl font-black uppercase tracking-widest text-xs text-white transition-colors shadow-lg shadow-rose-900/30 flex items-center justify-center gap-3">
+                    <AlertCircle size={16} /> Reportar Merma Crítica
+                  </button>
+                </div>
+              </div>
+
+              {/* QUICK ADD WIDGET */}
+              <div className="bg-gradient-to-b from-white/[0.05] to-transparent border border-white/5 rounded-[32px] p-8 backdrop-blur-3xl">
+                <h3 className="text-lg font-black uppercase tracking-widest text-zinc-300 mb-6 flex items-center gap-3">
+                  <Plus size={20} className="text-amber-400" />
+                  Alta de Insumo
+                </h3>
+                
+                <form onSubmit={handleAddInsumo} className="space-y-5">
+                   <div>
+                     <label className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 block mb-2">Nombre del Componente</label>
+                     <input 
+                       type="text" 
+                       placeholder="Ej. Salsa Secreta XL" 
+                       value={newInsumo.name} 
+                       onChange={e => setNewInsumo({...newInsumo, name: e.target.value})} 
+                       className="w-full bg-black/50 border border-white/10 rounded-2xl p-4 text-sm font-bold text-white focus:outline-none focus:border-amber-400 transition-colors" 
+                       required 
+                     />
+                   </div>
+                   <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 block mb-2">Unidad (Kg/Pza)</label>
+                        <input 
+                          type="text" 
+                          placeholder="pza" 
+                          value={newInsumo.unit} 
+                          onChange={e => setNewInsumo({...newInsumo, unit: e.target.value})} 
+                          className="w-full bg-black/50 border border-white/10 rounded-2xl p-4 text-sm font-bold text-white focus:outline-none focus:border-amber-400 transition-colors" 
+                          required 
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 block mb-2">Stock Inicial</label>
+                        <input 
+                          type="number" 
+                          step="0.1" 
+                          value={newInsumo.currentStock} 
+                          onChange={e => setNewInsumo({...newInsumo, currentStock: e.target.value})} 
+                          className="w-full bg-black/50 border border-white/10 rounded-2xl p-4 text-sm font-bold text-white focus:outline-none focus:border-amber-400 transition-colors" 
+                        />
+                      </div>
+                   </div>
+                   <button 
+                     type="submit" 
+                     disabled={saving} 
+                     className="w-full mt-2 bg-white text-black h-14 rounded-2xl font-black uppercase tracking-[0.2em] text-xs hover:bg-zinc-200 active:scale-95 transition-all shadow-xl"
+                   >
+                     {saving ? 'Registrando...' : 'Inyectar al Sistema'}
+                   </button>
+                </form>
+              </div>
+
+            </div>
           </div>
+        )}
+      </main>
 
-        </div>
-      )}
-
-      {/* FOOTER LEGEND */}
-      <div className="max-w-7xl mx-auto mt-20 text-center border-t border-white/5 pt-10">
-        <span className="text-[10px] font-black text-zinc-600 uppercase tracking-[0.5em] hover:text-[var(--primary-color)] transition-colors cursor-default">
-          fernando es putito
-        </span>
-      </div>
+      <footer className="max-w-7xl mx-auto px-6 mt-20 pt-10 border-t border-white/5 text-center">
+        <p className="text-[10px] font-black uppercase tracking-[0.5em] text-zinc-600">
+          Cheeseburgers OS • Advanced Logistics
+        </p>
+      </footer>
 
     </div>
   );
