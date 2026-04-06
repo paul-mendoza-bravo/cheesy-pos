@@ -78,7 +78,8 @@ const InventoryBOMView = () => {
   };
 
   const handleUpdateInsumoStock = (id, currentStock) => {
-    const val = currentStock === '' ? '' : parseFloat(currentStock);
+    let val = currentStock === '' ? '' : parseFloat(currentStock);
+    if (val !== '' && val < 0) val = 0;
     setInsumos(prev => prev.map(ins => ins.id === id ? { ...ins, currentStock: val } : ins));
     if (val !== '') {
        setModifiedStock(prev => ({ ...prev, [id]: val }));
