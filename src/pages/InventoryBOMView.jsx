@@ -28,6 +28,7 @@ const InventoryBOMView = () => {
   const [currentRecipe, setCurrentRecipe] = useState([]);
   const [auditCounts, setAuditCounts] = useState({});
   const [searchQuery, setSearchQuery] = useState('');
+  const [modifiedStock, setModifiedStock] = useState({});
 
   useEffect(() => {
     fetchData();
@@ -76,18 +77,35 @@ const InventoryBOMView = () => {
     }
   };
 
-  const handleUpdateInsumoStock = async (id, currentStock) => {
-    const target = insumos.find(i => i.id === id);
-    if (!target) return;
+  const handleUpdateInsumoStock = (id, currentStock) => {
+    const val = currentStock === '' ? '' : parseFloat(currentStock);
+    setInsumos(prev => prev.map(ins => ins.id === id ? { ...ins, currentStock: val } : ins));
+    if (val !== '') {
+       setModifiedStock(prev => ({ ...prev, [id]: val }));
+    }
+  };
+
+  const handleSaveAllStock = async () => {
+    const idsToUpdate = Object.keys(modifiedStock);
+    if (idsToUpdate.length === 0) return;
+    setSaving(true);
     try {
-      await fetch(`${API_URL}/insumos/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...target, currentStock: parseFloat(currentStock) || 0 })
+      const promises = idsToUpdate.map(async (id) => {
+        const target = insumos.find(i => i.id === parseInt(id));
+        if (!target) return;
+        return fetch(`${API_URL}/insumos/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ...target, currentStock: modifiedStock[id] })
+        });
       });
-      fetchData();
+      await Promise.all(promises);
+      setModifiedStock({});
+      await fetchData();
     } catch (err) {
       console.error(err);
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -303,15 +321,22 @@ const InventoryBOMView = () => {
                   </div>
 
                   {activeTab === 'insumos' && (
-                    <div className="relative w-full md:w-auto">
-                      <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500" size={18} />
-                      <input 
-                        type="text" 
-                        placeholder="Buscar..." 
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full md:w-64 bg-black/40 border border-white/10 rounded-full h-12 pl-12 pr-6 text-sm font-bold text-white placeholder-zinc-600 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition-all" 
-                      />
+                    <div className="flex flex-col md:flex-row items-center gap-4 w-full md:w-auto">
+                      {Object.keys(modifiedStock).length > 0 && (
+                        <button onClick={handleSaveAllStock} disabled={saving} className="w-full md:w-auto bg-emerald-500 hover:bg-emerald-400 text-black px-6 py-3 rounded-full font-black text-[10px] sm:text-xs uppercase tracking-widest transition-transform active:scale-95 shadow-lg shadow-emerald-900/40 flex items-center justify-center gap-2 animate-bounce">
+                          <Save size={16} /> {saving ? 'Guardando...' : 'Aplicar Cambios'}
+                        </button>
+                      )}
+                      <div className="relative w-full md:w-64 shrink-0">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500" size={18} />
+                        <input 
+                          type="text" 
+                          placeholder="Buscar..." 
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          className="w-full bg-black/40 border border-white/10 rounded-full h-12 pl-12 pr-6 text-sm font-bold text-white placeholder-zinc-600 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition-all" 
+                        />
+                      </div>
                     </div>
                   )}
                 </div>
