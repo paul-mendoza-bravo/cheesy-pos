@@ -188,36 +188,6 @@ const InventoryBOMView = () => {
     return '📦';
   };
 
-  const CircularGauge = ({ value, label, color }) => {
-    const strokeWidth = 8;
-    const radius = 32;
-    const circ = 2 * Math.PI * radius;
-    const offset = circ - (value / 100) * circ;
-    
-    return (
-      <div className="flex flex-col items-center gap-3 bg-white/5 p-4 rounded-3xl border border-white/10 hover:bg-white/10 transition-colors">
-        <div className="relative w-20 h-20">
-          <svg className="w-full h-full transform -rotate-90 drop-shadow-md">
-            <circle stroke="rgba(255,255,255,0.05)" strokeWidth={strokeWidth} fill="transparent" r={radius} cx="40" cy="40" />
-            <circle 
-              stroke={color} 
-              strokeWidth={strokeWidth} 
-              strokeDasharray={circ} 
-              strokeDashoffset={offset} 
-              strokeLinecap="round" 
-              fill="transparent" 
-              r={radius} cx="40" cy="40" 
-              className="transition-all duration-1000 ease-out"
-            />
-          </svg>
-          <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <span className="text-xl font-black text-white">{value}%</span>
-          </div>
-        </div>
-        <span className="text-xs font-bold text-zinc-400 uppercase tracking-widest text-center leading-tight">{label}</span>
-      </div>
-    );
-  };
 
   if (!currentUser?.role?.includes('admin')) {
     return (
@@ -292,18 +262,8 @@ const InventoryBOMView = () => {
         ) : (
           <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
             
-            {/* ────── CENTER CANVAS (SPAN 8) ────── */}
-            <div className="xl:col-span-8 flex flex-col gap-8">
-              
-              {/* TOP DASHBOARD CARDS */}
-              {activeTab === 'insumos' && (
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <CircularGauge value={74} label="Panes" color="#DA291C" />
-                  <CircularGauge value={89} label="Queso" color="#FFC72C" />
-                  <CircularGauge value={61} label="Carne" color="#10B981" />
-                  <CircularGauge value={55} label="Papas" color="#3B82F6" />
-                </div>
-              )}
+            {/* ────── CENTER CANVAS (FULL WIDTH) ────── */}
+            <div className="xl:col-span-12 flex flex-col gap-8">
 
               {/* MAIN CONTENT AREA */}
               <div className="bg-white/[0.02] border border-white/5 rounded-[32px] p-6 lg:p-10 backdrop-blur-3xl shadow-2xl relative overflow-hidden">
@@ -482,34 +442,7 @@ const InventoryBOMView = () => {
               </div>
             </div>
 
-            {/* ────── COMMAND CENTER (RIGHT SIDEBAR, SPAN 4) ────── */}
-            <div className="xl:col-span-4 flex flex-col gap-6">
-              
-              {/* SMART INSIGHTS WIDGET */}
-              <div className="bg-white/[0.02] border border-white/5 rounded-[32px] p-8 backdrop-blur-3xl relative overflow-hidden">
-                <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-emerald-400 to-emerald-600"></div>
-                <div className="flex items-center justify-between mb-8">
-                  <h3 className="text-sm font-black uppercase tracking-widest text-zinc-300 flex items-center gap-2">
-                    <Activity size={18} className="text-emerald-400"/> IA Insights
-                  </h3>
-                  <div className="bg-emerald-500/20 text-emerald-400 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest flex items-center gap-2">
-                    En línea
-                  </div>
-                </div>
 
-                <div className="space-y-4">
-                  <div className="bg-black/40 p-4 rounded-xl border border-white/5">
-                    <span className="text-[10px] text-zinc-500 uppercase font-black block mb-1 tracking-widest">Top Consumo Hoy</span>
-                    <p className="text-sm font-bold text-white">Carne Premium BBQ (7.2 kg)</p>
-                  </div>
-                  <div className="bg-black/40 p-4 rounded-xl border border-white/5">
-                    <span className="text-[10px] text-zinc-500 uppercase font-black block mb-1 tracking-widest">Reabastecimiento IA</span>
-                    <p className="text-sm font-bold text-amber-400">5 Cajas Aguacate, 10 Cajas Agua</p>
-                  </div>
-                </div>
-              </div>
-
-            </div>
           </div>
         )}
       </main>
