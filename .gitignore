@@ -28,3 +28,13 @@ dist-ssr
 # Runtime output logs (local dev only)
 backend/err.txt
 backend/out.txt
+
+# ai-service (Python / FastAPI)
+ai-service/__pycache__/
+ai-service/**/__pycache__/
+ai-service/*.pyc
+ai-service/.pytest_cache/
+ai-service/venv/
+ai-service/.venv/
+ai-service/.env
+ai-service/.env.local

@@ -42,11 +42,18 @@ El sistema tiene dos flujos de acceso completamente independientes:
   - `/context`: Lógica global (Auth, Orders, Inventory, Cart).
   - `/pages`: Vistas segmentadas por rol y portal.
   - `/components`: Elementos reutilizables (Modales, NavBars, etc).
-- `/backend`: Servidor Express.
+- `/backend`: Servidor Express (POS principal — `:3001`).
   - `server.js`: Punto de entrada y configuración de Sockets.
   - `/routes`: `api.js` (B2B) y `client.js` (B2C).
   - `database.js`: Gestión del Pool y migraciones automáticas.
   - `schema.sql`: Definición base de tablas.
+- `/ai-service`: 🆕 Microservicio FastAPI WhatsApp + IA (`:8000`).
+  - `app/api/routes/webhook.py`: webhook que recibe mensajes de Meta.
+  - `app/core/llm_processor.py`: extracción de orden con LLM (Claude/OpenAI).
+  - `app/core/menu_definitions.py`: catálogo canónico (precios + COGS).
+  - `app/core/database.py`: **NO toca Postgres directo** — hace `POST /api/orders` al backend Node, que persiste y emite `nuevo_pedido` por socket.io.
+- `/docs`: Documentación técnica (AI service, integración, `documentation.html`).
+- `docker-compose.yml`: Orquesta backend + ai-service en local.
 
 ---
 
@@ -92,6 +99,42 @@ El sistema incluye un tablero de BI en el Admin Dashboard que calcula métricas 
 
 ## 🛠️ Desarrollo Local
 1. Instalar dependencias en raíz y `/backend` con `npm install`.
-2. Configurar `.env` local.
+2. Configurar `.env` local en `/backend` y en `/ai-service` (ver `.env.example`).
 3. Correr backend: `cd backend && npm run dev` (puerto 3001).
 4. Correr frontend: `npm run dev` (puerto 5173).
+5. Correr ai-service (opcional, solo si quieres WhatsApp+IA):
+   ```bash
+   cd ai-service
+   python -m venv venv && venv\Scripts\Activate.ps1
+   pip install -r requirements.txt
+   uvicorn app.main:app --reload --port 8000
+   ```
+   o todo junto vía `docker-compose up --build` desde la raíz.
+
+---
+
+## 🤖 Flujo WhatsApp → POS (ai-service)
+
+```
+Cliente WhatsApp
+      │
+      ▼
+Meta Cloud API ──► POST /webhook/cheesy-pos  (ai-service :8000)
+                        │
+                        ├─► LLM extrae orden estructurada
+                        ├─► validación contra menu_definitions
+                        ├─► recosteo determinista
+                        │
+                        ▼
+                  POST /api/orders  (backend Node :3001)
+                        │
+                        ├─► INSERT transaccional en Postgres
+                        ├─► socket.io emit('nuevo_pedido')  ──► Cocina UI
+                        │
+                        ▼
+                 ai-service envía respuesta al cliente
+                        por WhatsApp Cloud API
+```
+
+Toda la inteligencia de negocio (BI, inventario, eventos, deducción de stock, BOM)
+sigue viviendo en el backend Node. El ai-service solo traduce lenguaje natural → orden.

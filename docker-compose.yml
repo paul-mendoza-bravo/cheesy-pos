@@ -1,0 +1,33 @@
+version: '3.8'
+
+# Orquesta los dos backends del Cheesy POS:
+#   - backend (Node Express) : POS principal — :3001
+#   - ai-service (FastAPI)   : WhatsApp + IA — :8000
+#
+# El frontend (Vite) se corre por separado con `npm run dev` en :5173
+# durante desarrollo, o se despliega a Vercel en producción.
+
+services:
+
+  backend:
+    build: ./backend
+    container_name: cheesy-backend
+    ports:
+      - "3001:3001"
+    env_file:
+      - ./backend/.env
+    restart: unless-stopped
+
+  ai-service:
+    build: ./ai-service
+    container_name: cheesy-ai
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./ai-service/.env
+    environment:
+      # Dentro de la red de Docker, el Node responde como 'backend'
+      - NODE_API_URL=http://backend:3001
+    depends_on:
+      - backend
+    restart: unless-stopped

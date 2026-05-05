@@ -1,0 +1,46 @@
+[
+  {
+    "description": "Cliente pide 2 Mexas dobles con Papas Especiales",
+    "input": {
+      "mensaje_cliente": "Dame 2 mexas dobles y papas especiales, porfa",
+      "numero_telefono": "5255123456789"
+    },
+    "expected_output": {
+      "estado_pedido": "EN_PROCESO",
+      "items": [
+        {"producto": "Mexa", "cantidad": 2, "es_doble": true},
+        {"producto": "Papas Especiales", "cantidad": 1}
+      ]
+    }
+  },
+  {
+    "description": "Cliente da dirección y pide bebida",
+    "input": {
+      "mensaje_cliente": "Una Clásica sencilla, papas, agua de jamaica, entrega en Centro",
+      "numero_telefono": "5255987654321"
+    },
+    "expected_output": {
+      "estado_pedido": "COMPLETO",
+      "items": [
+        {"producto": "Clásica", "cantidad": 1},
+        {"producto": "Papas Sencillas", "cantidad": 1},
+        {"producto": "Agua de Jamaica", "cantidad": 1}
+      ],
+      "direccion": "Centro"
+    }
+  },
+  {
+    "description": "Cliente solo pide hamburguesa, sin dirección ni bebida",
+    "input": {
+      "mensaje_cliente": "Una BBQ nada más",
+      "numero_telefono": "5255555555555"
+    },
+    "expected_output": {
+      "estado_pedido": "EN_PROCESO",
+      "respuesta_bot_includes": "¿A dónde es la entrega?",
+      "items": [
+        {"producto": "BBQ", "cantidad": 1}
+      ]
+    }
+  }
+]

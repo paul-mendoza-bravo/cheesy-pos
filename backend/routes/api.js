@@ -149,7 +149,7 @@ export const createApiRoutes = (io) => {
   // ==========================================
   // B2C CUSTOMERS ENDPOINTS (Admin)
   // ==========================================
-  
+
   router.get('/customers', async (req, res) => {
     try {
       const result = await pool.query('SELECT id, name, email, phone, status, created_at FROM customers ORDER BY created_at DESC');
@@ -164,7 +164,7 @@ export const createApiRoutes = (io) => {
     try {
       const { id } = req.params;
       const { status } = req.body;
-      
+
       if (!['PENDING', 'APPROVED', 'REJECTED'].includes(status)) {
         return res.status(400).json({ error: 'Estado inválido' });
       }
@@ -363,7 +363,7 @@ export const createApiRoutes = (io) => {
             FROM recipes r
             WHERE r.insumo_id = i.id AND r.product_id = $1
           `, [item.product_id, item.quantity]);
-          
+
           // Modifiers deduction
           const modifiers = item.modifiers ? (typeof item.modifiers === 'string' ? JSON.parse(item.modifiers) : item.modifiers) : [];
           for (const mod of modifiers) {
@@ -504,7 +504,7 @@ export const createApiRoutes = (io) => {
   router.post('/inventory', async (req, res) => {
     try {
       const { missingItems, cookId } = req.body;
-      
+
       if (!missingItems || !Array.isArray(missingItems)) {
         return res.status(400).json({ error: 'missingItems array is required' });
       }
@@ -513,7 +513,7 @@ export const createApiRoutes = (io) => {
         'INSERT INTO inventory_reports (cook_id, missing_items) VALUES ($1, $2) RETURNING *',
         [cookId || null, JSON.stringify(missingItems)]
       );
-      
+
       const newReport = {
         id: result.rows[0].id,
         cookId: result.rows[0].cook_id,
@@ -524,7 +524,7 @@ export const createApiRoutes = (io) => {
       // Emit realtime event
       io.emit('nuevo_inventario', newReport);
       console.log(`[Socket] Emitido: nuevo_inventario por ${cookId || 'N/A'}`);
-      
+
       res.status(201).json(newReport);
 
     } catch (error) {
@@ -598,10 +598,10 @@ export const createApiRoutes = (io) => {
 
       const row = result.rows[0];
       res.json({
-        orderCount:   parseInt(row.order_count)       || 0,
-        grossRevenue: parseFloat(row.gross_revenue)   || 0,
-        aov:          parseFloat(row.aov)             || 0,
-        totalCogs:    parseFloat(row.total_cogs)      || 0,
+        orderCount: parseInt(row.order_count) || 0,
+        grossRevenue: parseFloat(row.gross_revenue) || 0,
+        aov: parseFloat(row.aov) || 0,
+        totalCogs: parseFloat(row.total_cogs) || 0,
       });
     } catch (error) {
       console.error('[BI Summary] Error:', error);
@@ -629,10 +629,10 @@ export const createApiRoutes = (io) => {
       `);
 
       res.json(result.rows.map(r => ({
-        productName:          r.product_name,
-        totalQty:             parseInt(r.total_qty),
-        grossRevenue:         parseFloat(r.gross_revenue),
-        contributionMargin:   parseFloat(r.contribution_margin),
+        productName: r.product_name,
+        totalQty: parseInt(r.total_qty),
+        grossRevenue: parseFloat(r.gross_revenue),
+        contributionMargin: parseFloat(r.contribution_margin),
       })));
     } catch (error) {
       console.error('[BI Top Products] Error:', error);
@@ -663,11 +663,11 @@ export const createApiRoutes = (io) => {
       console.log(`[BI] Egreso registrado: $${row.amount} — ${row.description} (por: ${row.recorded_by || 'N/A'})`);
 
       res.status(201).json({
-        id:          row.id,
-        amount:      parseFloat(row.amount),
+        id: row.id,
+        amount: parseFloat(row.amount),
         description: row.description,
-        recordedBy:  row.recorded_by,
-        createdAt:   row.created_at,
+        recordedBy: row.recorded_by,
+        createdAt: row.created_at,
       });
     } catch (error) {
       console.error('[Cash Outflow POST] Error:', error);
@@ -693,11 +693,11 @@ export const createApiRoutes = (io) => {
       `);
 
       const outflows = result.rows.map(r => ({
-        id:          r.id,
-        amount:      parseFloat(r.amount),
+        id: r.id,
+        amount: parseFloat(r.amount),
         description: r.description,
-        recordedBy:  r.recorded_by,
-        createdAt:   r.created_at,
+        recordedBy: r.recorded_by,
+        createdAt: r.created_at,
       }));
 
       const dailyTotal = result.rows.length > 0
@@ -797,17 +797,17 @@ export const createApiRoutes = (io) => {
       await client.query('BEGIN');
       const { productId } = req.params;
       const { ingredients } = req.body; // Array of { insumoId, quantity }
-      
+
       // Replace entire recipe
       await client.query('DELETE FROM recipes WHERE product_id = $1', [productId]);
-      
+
       for (const ing of ingredients) {
         await client.query(
           'INSERT INTO recipes (product_id, insumo_id, quantity) VALUES ($1, $2, $3)',
           [productId, ing.insumoId, ing.quantity]
         );
       }
-      
+
       await client.query('COMMIT');
       res.json({ success: true });
     } catch (error) {
@@ -824,19 +824,19 @@ export const createApiRoutes = (io) => {
     try {
       await client.query('BEGIN');
       const { inventoryCounts, userId } = req.body; // Array of { insumoId, actualStock, predictedStock }
-      
+
       for (const count of inventoryCounts) {
         const difference = count.actualStock - count.predictedStock;
-        
+
         await client.query(
           'INSERT INTO inventory_counts (insumo_id, predicted_stock, actual_stock, difference, counted_by) VALUES ($1, $2, $3, $4, $5)',
           [count.insumoId, count.predictedStock, count.actualStock, difference, userId || null]
         );
-        
+
         // Update actual stock
         await client.query('UPDATE insumos SET current_stock = $1 WHERE id = $2', [count.actualStock, count.insumoId]);
       }
-      
+
       await client.query('COMMIT');
       res.json({ success: true });
     } catch (error) {
@@ -851,12 +851,12 @@ export const createApiRoutes = (io) => {
   // ==========================================
   // CIERRE DE CAJA Y REINICIO DE CUENTAS
   // ==========================================
-  
+
   router.post('/reports/close-day', async (req, res) => {
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
-      
+
       // 1. Obtener la información actual (las cuentas)
       const ordersRes = await client.query('SELECT * FROM orders ORDER BY created_at ASC');
       // Asegurarse de que hay órdenes por borrar
@@ -873,7 +873,7 @@ export const createApiRoutes = (io) => {
           WHERE table_name = 'inventory_reports'
         );
       `);
-      
+
       let inventoryReports = [];
       if (inventoryReportsRes.rows[0].exists) {
         const invRes = await client.query('SELECT * FROM inventory_reports');
@@ -886,7 +886,7 @@ export const createApiRoutes = (io) => {
           WHERE table_name = 'cash_outflows'
         );
       `);
-      
+
       let cashOutflows = [];
       if (cashOutflowsRes.rows[0].exists) {
         const cashRes = await client.query('SELECT * FROM cash_outflows');
@@ -902,21 +902,21 @@ export const createApiRoutes = (io) => {
 
       // 2. Estructurar el JSON
       const exportData = {
-          dateRange: { start: minDate, end: maxDate },
-          exportedAt: new Date().toISOString(),
-          orders: ordersRes.rows,
-          orderItems: orderItemsRes.rows,
-          orderEvents: orderEventsRes.rows,
-          inventoryReports: inventoryReports,
-          cashOutflows: cashOutflows,
+        dateRange: { start: minDate, end: maxDate },
+        exportedAt: new Date().toISOString(),
+        orders: ordersRes.rows,
+        orderItems: orderItemsRes.rows,
+        orderEvents: orderEventsRes.rows,
+        inventoryReports: inventoryReports,
+        cashOutflows: cashOutflows,
       };
 
       // 3. Definir nombre de archivo y Reiniciar las cuentas
       const fileName = `cuentas_cierre_${minDate}_al_${maxDate}.json`;
-      
+
       let truncateTables = ['orders'];
-      if(inventoryReportsRes.rows[0].exists) truncateTables.push('inventory_reports');
-      if(cashOutflowsRes.rows[0].exists) truncateTables.push('cash_outflows');
+      if (inventoryReportsRes.rows[0].exists) truncateTables.push('inventory_reports');
+      if (cashOutflowsRes.rows[0].exists) truncateTables.push('cash_outflows');
 
       await client.query(`TRUNCATE TABLE ${truncateTables.join(', ')} RESTART IDENTITY CASCADE`);
 

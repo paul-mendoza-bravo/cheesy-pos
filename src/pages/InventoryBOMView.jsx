@@ -337,6 +337,27 @@ const InventoryBOMView = () => {
                         </div>
                       );
                     })}
+
+                    {/* ADD NEW INSUMO FORM */}
+                    <div className="mt-4 bg-white/[0.01] border border-white/5 border-dashed rounded-3xl p-5 flex flex-col md:flex-row items-center justify-between gap-4">
+                       <input 
+                         type="text" 
+                         placeholder="Nuevo Insumo (Ej: Queso Manchego)" 
+                         value={newInsumo.name}
+                         onChange={e => setNewInsumo({...newInsumo, name: e.target.value})}
+                         className="w-full bg-black/40 border border-white/10 rounded-full h-12 px-6 text-sm font-bold text-white placeholder-zinc-600 focus:border-rose-500 focus:outline-none focus:ring-1 focus:ring-rose-500" 
+                       />
+                       <input 
+                         type="text" 
+                         placeholder="Unidad (Ej: rebanada)" 
+                         value={newInsumo.unit}
+                         onChange={e => setNewInsumo({...newInsumo, unit: e.target.value})}
+                         className="w-full md:w-64 bg-black/40 border border-white/10 rounded-full h-12 px-6 text-sm font-bold text-white placeholder-zinc-600 focus:border-rose-500 focus:outline-none focus:ring-1 focus:ring-rose-500" 
+                       />
+                       <button onClick={handleAddInsumo} disabled={saving || !newInsumo.name || !newInsumo.unit} className="w-full md:w-auto bg-white hover:bg-zinc-200 text-black px-8 py-3 rounded-full font-black text-xs uppercase tracking-widest transition-transform active:scale-95 disabled:opacity-50 shrink-0">
+                         + Añadir
+                       </button>
+                    </div>
                   </div>
                 )}
 

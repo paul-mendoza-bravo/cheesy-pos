@@ -4,6 +4,7 @@ const INSUMOS = [
   { name: 'Pan de Hamburguesa', unit: 'pieza', cost: 7.08 },
   { name: 'Carne Molida', unit: 'g', cost: 0.15 },
   { name: 'Queso', unit: 'rebanada', cost: 2.50 },
+  { name: 'Queso Manchego', unit: 'rebanada', cost: 3.00 },
   { name: 'Tocino', unit: 'porción', cost: 5.00 },
   { name: 'Cebolla Caramelizada', unit: 'g', cost: 0.03 },
   { name: 'Aguacate', unit: 'porción', cost: 6.25 },
