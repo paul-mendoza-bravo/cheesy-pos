@@ -35,7 +35,7 @@ async def verificar_webhook(request: Request):
 
 @router.post("/webhook/cheesy-pos", tags=["Webhook"])
 async def recibir_pedido(
-    payload: IncomingMessage,
+    request: Request,
     background_tasks: BackgroundTasks
 ) -> WebhookResponse:
     """
@@ -49,6 +49,39 @@ async def recibir_pedido(
     5. Si COMPLETO -> inyecta en Supabase
     6. Responde al cliente (async en background)
     """
+    try:
+        data = await request.json()
+        
+        # Parseo de estructura de Meta Webhook
+        if "object" in data and data["object"] == "whatsapp_business_account":
+            entry = data.get("entry", [{}])[0]
+            changes = entry.get("changes", [{}])[0]
+            value = changes.get("value", {})
+            messages = value.get("messages", [])
+            
+            if not messages:
+                # Evento sin mensajes (ej. status update de entregado/leido)
+                return WebhookResponse(status="success", accion="ignorado", numero="", mensaje_para_enviar="", datos_pos={})
+                
+            msg = messages[0]
+            if msg.get("type") != "text":
+                return WebhookResponse(status="success", accion="ignorado_no_texto", numero="", mensaje_para_enviar="", datos_pos={})
+                
+            numero_telefono = msg.get("from")
+            mensaje_cliente = msg.get("text", {}).get("body", "")
+            
+            payload = IncomingMessage(
+                mensaje_cliente=mensaje_cliente,
+                numero_telefono=numero_telefono
+            )
+        else:
+            # Fallback para testing con la estructura plana
+            payload = IncomingMessage(**data)
+
+    except Exception as e:
+        logger.error(f"❌ Error parseando JSON del webhook: {e}")
+        raise HTTPException(status_code=400, detail="Estructura de JSON no válida")
+
     logger.info(f"📨 Webhook recibido de {payload.numero_telefono}: {payload.mensaje_cliente[:50]}...")
     
     try:
