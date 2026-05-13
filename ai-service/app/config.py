@@ -21,7 +21,7 @@ LLM_MODEL = os.getenv("LLM_MODEL", "gpt-4")  # o "claude-3-opus-20240229"
 # ==========================================
 # WHATSAPP (META)
 # ==========================================
-WHATSAPP_API_URL = os.getenv("WHATSAPP_API_URL", "https://graph.instagram.com/v18.0")
+WHATSAPP_API_URL = os.getenv("WHATSAPP_API_URL", "https://graph.facebook.com/v25.0")
 WHATSAPP_BUSINESS_ACCOUNT_ID = os.getenv("WHATSAPP_BUSINESS_ACCOUNT_ID", "")
 WHATSAPP_ACCESS_TOKEN = os.getenv("WHATSAPP_ACCESS_TOKEN", "")
 WHATSAPP_PHONE_NUMBER_ID = os.getenv("WHATSAPP_PHONE_NUMBER_ID", "")
