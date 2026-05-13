@@ -4,7 +4,7 @@ export const mockProducts = [
     id: 'h2',
     name: 'La Mexa',
     description: 'Nuestra especialidad de la casa.',
-    price: 80.0,
+    price: 90.0,
     category: 'burgers',
     image: '🌶️',
     hasModifiers: true
@@ -13,7 +13,7 @@ export const mockProducts = [
     id: 'h3',
     name: 'La BBQ',
     description: 'Salsa BBQ especial y crujiente tocino.',
-    price: 75.0,
+    price: 85.0,
     category: 'burgers',
     image: '🥩',
     hasModifiers: true
@@ -22,7 +22,7 @@ export const mockProducts = [
     id: 'h4',
     name: 'La Hawaiana',
     description: 'Con piña asada, jamón y queso suizo.',
-    price: 75.0,
+    price: 85.0,
     category: 'burgers',
     image: '🍍',
     hasModifiers: true
@@ -31,7 +31,7 @@ export const mockProducts = [
     id: 'h1',
     name: 'Clásica',
     description: 'La hamburguesa tradicional.',
-    price: 65.0,
+    price: 75.0,
     category: 'burgers',
     image: '🍔',
     hasModifiers: true // Menos sugerida pero igual permite extras
@@ -42,7 +42,7 @@ export const mockProducts = [
     id: 's2',
     name: 'Papas Especiales',
     description: 'Con rajas, aderezo de la casa y tocineta.',
-    price: 60.0,
+    price: 70.0,
     category: 'sides',
     image: '🔥',
     hasModifiers: false
@@ -62,7 +62,7 @@ export const mockProducts = [
     id: 'c1',
     name: 'COMBO MEXA',
     description: 'La Mexa + Papas Especiales',
-    price: 140.0, // 80 + 60
+    price: 160.0, // 90 + 70
     category: 'combos',
     image: '⚡',
     hasModifiers: false
