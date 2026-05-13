@@ -184,6 +184,8 @@ const PosMenu = () => {
               </div>
             )}
           </div>
+
+          <img src="/burger_mascot.png" alt="Cheesy Burger Mascot" className="pos-mascot" />
         </div>
 
         {/* ===== RIGHT: Cart Panel (Always visible) ===== */}
@@ -339,6 +341,26 @@ const PosMenu = () => {
           overflow: hidden;
           padding: 16px 20px;
           gap: 12px;
+          position: relative;
+        }
+
+        .pos-mascot {
+          position: absolute;
+          bottom: 20px;
+          left: 20px;
+          width: 300px;
+          height: auto;
+          opacity: 0.85;
+          pointer-events: none;
+          z-index: 0;
+          animation: float 6s ease-in-out infinite;
+          filter: drop-shadow(0px 10px 15px rgba(0,0,0,0.4));
+        }
+
+        @keyframes float {
+          0% { transform: translateY(0px) rotate(0deg); }
+          50% { transform: translateY(-10px) rotate(2deg); }
+          100% { transform: translateY(0px) rotate(0deg); }
         }
 
         .pos-cart-panel {
@@ -471,6 +493,8 @@ const PosMenu = () => {
           overflow-y: auto;
           padding: 4px 2px 80px 2px;
           align-content: start;
+          position: relative;
+          z-index: 1;
         }
 
         .pos-product-card {
