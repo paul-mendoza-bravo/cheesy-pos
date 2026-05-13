@@ -1,5 +1,5 @@
 import React from 'react';
-import { CATEGORIES } from '../data/mockProducts';
+import { CATEGORIES } from '../data/products';
 
 const CategoryTabs = ({ selectedCategory, onSelectCategory }) => {
   return (

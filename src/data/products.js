@@ -1,4 +1,4 @@
-export const mockProducts = [
+export const products = [
   // CATEGORÍA: HAMBURGUESAS (Priorizadas por margen y estrategia)
   {
     id: 'h2',

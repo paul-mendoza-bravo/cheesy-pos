@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { MODIFIERS } from '../data/mockProducts';
+import { MODIFIERS } from '../data/products';
 import { X } from 'lucide-react';
 
 const ProductOptionsModal = ({ isOpen, onClose, product, onAddToCart }) => {

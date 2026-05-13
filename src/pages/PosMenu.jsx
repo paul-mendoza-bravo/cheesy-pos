@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { mockProducts, CATEGORIES, MODIFIERS } from '../data/mockProducts';
+import { products, CATEGORIES, MODIFIERS } from '../data/products';
 import { useCart } from '../context/CartContext';
 import { useOrders } from '../context/OrdersContext';
 import { useAuth } from '../context/AuthContext';
@@ -42,7 +42,7 @@ const PosMenu = () => {
     setTimeout(() => setToast(null), 1600);
   };
 
-  const filteredProducts = mockProducts.filter(p => {
+  const filteredProducts = products.filter(p => {
     const matchesCategory = selectedCategory === 'all' || p.category === selectedCategory;
     const matchesSearch = !searchQuery || p.name.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesCategory && matchesSearch;
@@ -50,8 +50,8 @@ const PosMenu = () => {
 
   const handleSelectProduct = (product) => {
     if (product.category === 'combos') {
-      const mexa = mockProducts.find(p => p.id === 'h2');
-      const papas = mockProducts.find(p => p.id === 's2');
+      const mexa = products.find(p => p.id === 'h2');
+      const papas = products.find(p => p.id === 's2');
       if (mexa) addToCart(mexa, []);
       if (papas) addToCart(papas, []);
       showToast('⚡ Combo Mexa agregado');
@@ -88,7 +88,7 @@ const PosMenu = () => {
 
   const handleQuickCombo = (combo) => {
     combo.ids.forEach(id => {
-      const p = mockProducts.find(pr => pr.id === id);
+      const p = products.find(pr => pr.id === id);
       if (p) addToCart(p, []);
     });
     showToast(`✓ ${combo.label} agregado`);

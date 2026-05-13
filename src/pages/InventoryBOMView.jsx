@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { mockProducts, MODIFIERS } from '../data/mockProducts';
+import { products, MODIFIERS } from '../data/products';
 import { Save, Beef, Check, Package, RefreshCw, AlertCircle, Search, Activity, Box, Database, Zap } from 'lucide-react';
 
 const HOST_URL = import.meta.env.VITE_API_URL || `http://${window.location.hostname}:3001`;
 const API_URL = `${HOST_URL}/api`;
 
 const allProducts = [
-  ...mockProducts,
+  ...products,
   ...Object.values(MODIFIERS)
 ];
 
