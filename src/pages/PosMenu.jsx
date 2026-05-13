@@ -108,7 +108,7 @@ const PosMenu = () => {
             <button 
               onClick={() => setIsCustomOrderOpen(true)} 
               className="btn" 
-              style={{ padding: '8px 14px', fontSize: '12px', minHeight: 'auto' }}
+              style={{ padding: '8px 14px', fontSize: '12px', minHeight: 'auto', background: 'var(--bg-container)', color: 'var(--text-main)' }}
             >
               <PenLine size={14} /> Especial
             </button>
@@ -348,13 +348,13 @@ const PosMenu = () => {
           position: absolute;
           bottom: 20px;
           left: 20px;
-          width: 300px;
+          width: 250px;
           height: auto;
-          opacity: 0.85;
+          opacity: 0.9;
           pointer-events: none;
           z-index: 0;
           animation: float 6s ease-in-out infinite;
-          filter: drop-shadow(0px 10px 15px rgba(0,0,0,0.4));
+          mix-blend-mode: screen;
         }
 
         @keyframes float {
@@ -395,6 +395,7 @@ const PosMenu = () => {
         .pos-quick-btn {
           padding: 6px 14px;
           background: var(--yellow);
+          color: #0A0A0A !important;
           border: var(--border-2) solid var(--ink);
           border-radius: var(--radius-sm);
           font-family: 'Inter', sans-serif;
@@ -463,7 +464,8 @@ const PosMenu = () => {
           padding: 6px 16px;
           border: var(--border-2) solid var(--ink);
           border-radius: var(--radius-sm);
-          background: var(--bg-color);
+          background: var(--bg-surface);
+          color: var(--text-main);
           font-family: 'Inter', sans-serif;
           font-size: 13px;
           font-weight: 700;
@@ -479,7 +481,7 @@ const PosMenu = () => {
         }
         .pos-cat-btn.active {
           background: var(--ink);
-          color: var(--paper);
+          color: var(--bg-surface);
           box-shadow: none;
           transform: translate(2px, 2px);
         }
@@ -563,11 +565,12 @@ const PosMenu = () => {
           align-items: center;
           border-bottom: var(--border-2) solid var(--ink);
           background: var(--yellow);
+          color: #0A0A0A;
         }
 
         .pos-cart-badge {
           background: var(--ink);
-          color: var(--paper);
+          color: var(--bg-surface);
           font-size: 11px;
           font-weight: 800;
           padding: 1px 7px;
@@ -726,7 +729,7 @@ const PosMenu = () => {
           border: var(--border-2) solid var(--ink);
           border-radius: var(--radius-md);
           background: var(--green);
-          color: var(--ink);
+          color: #0A0A0A !important;
           box-shadow: var(--shadow-md);
           cursor: pointer;
           display: flex;
