@@ -89,57 +89,10 @@ export const products = [
     initial: 'P',
   },
 
-  // ── COMBOS ──────────────────────────────────────────────────
-  {
-    id: 'c1',
-    name: 'Combo Mexa',
-    description: 'La Mexa + Papas Especiales',
-    price: 160.0,
-    category: 'combos',
-    initial: 'CM',
-    comboIds: ['h2', 's2'],
-  },
-  {
-    id: 'c2',
-    name: 'Combo Clásica',
-    description: 'Clásica + Papas Sencillas',
-    price: 110.0,
-    category: 'combos',
-    initial: 'CC',
-    comboIds: ['h1', 's1'],
-  },
-  {
-    id: 'c3',
-    name: 'Combo Hawaiana',
-    description: 'Hawaiana + Papas Especiales',
-    price: 155.0,
-    category: 'combos',
-    initial: 'CH',
-    comboIds: ['h4', 's2'],
-  },
-  {
-    id: 'c4',
-    name: 'Combo BBQ',
-    description: 'BBQ + Papas Sencillas',
-    price: 120.0,
-    category: 'combos',
-    initial: 'CB',
-    comboIds: ['h3', 's1'],
-  },
-  {
-    id: 'c5',
-    name: 'Combo Mexa Doble',
-    description: 'Mexa Doble + Papas Especiales',
-    price: 200.0,
-    category: 'combos',
-    initial: 'CD',
-    comboIds: ['h2d', 's2'],
-  },
 ];
 
 export const CATEGORIES = [
   { id: 'all', label: 'Todo' },
-  { id: 'combos', label: 'Combos' },
   { id: 'burgers', label: 'Hamburguesas' },
   { id: 'sides', label: 'Guarniciones' },
 ];

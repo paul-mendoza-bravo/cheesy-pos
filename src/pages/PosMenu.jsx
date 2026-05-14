@@ -40,16 +40,8 @@ const PosMenu = () => {
   });
 
   const handleSelectProduct = (product) => {
-    if (product.comboIds) {
-      product.comboIds.forEach(id => {
-        const p = products.find(pr => pr.id === id);
-        if (p) addToCart(p, []);
-      });
-      showToast(`${product.name} agregado`);
-    } else {
-      addToCart(product, []);
-      showToast(`${product.name} agregado`);
-    }
+    addToCart(product, []);
+    showToast(`${product.name} agregado`);
   };
 
   const handleCheckout = () => {
@@ -64,17 +56,7 @@ const PosMenu = () => {
     showToast('Pedido enviado a cocina');
   };
 
-  const quickCombos = [
-    { label: 'Combo Mexa', ids: ['h2', 's2'] },
-    { label: 'Clásica + Papas', ids: ['h1', 's1'] },
-    { label: 'Hawaiana + Papas', ids: ['h4', 's2'] },
-    { label: 'Mexa Doble + Papas', ids: ['h2d', 's2'] },
-  ];
 
-  const handleQuickCombo = (combo) => {
-    combo.ids.forEach(id => { const p = products.find(pr => pr.id === id); if (p) addToCart(p, []); });
-    showToast(`${combo.label} agregado`);
-  };
 
   return (
     <>
@@ -89,16 +71,6 @@ const PosMenu = () => {
             <button onClick={() => setIsCustomOrderOpen(true)} className="btn" style={{ padding: '8px 14px', fontSize: '12px', minHeight: 'auto' }}>
               <PenLine size={14} /> Especial
             </button>
-          </div>
-
-          {/* Quick Combos */}
-          <div className="pos-quick-bar">
-            <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--ink-faint)', letterSpacing: '0.06em', whiteSpace: 'nowrap' }}>
-              <Zap size={11} style={{ display: 'inline', verticalAlign: '-2px' }} /> RAPIDO:
-            </span>
-            {quickCombos.map((c, i) => (
-              <button key={i} className="pos-quick-btn" onClick={() => handleQuickCombo(c)}>{c.label}</button>
-            ))}
           </div>
 
           {/* Search */}
