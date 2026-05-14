@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { ChefHat, Lock } from 'lucide-react';
+import { Lock } from 'lucide-react';
+import BurgerLogo from '../components/BurgerLogo';
 
 const Login = () => {
   const [userId, setUserId] = useState('');
@@ -24,7 +25,6 @@ const Login = () => {
     const { success, message: loginMsg, user } = await login(userId, password);
     
     if (success) {
-      // Redirigir según el rol del usuario
       if (user?.role === 'admin') {
         navigate('/admin');
       } else if (user?.role === 'parillero') {
@@ -36,9 +36,9 @@ const Login = () => {
       }
     } else {
       if (loginMsg.includes('aprobación')) {
-         setMessage(loginMsg); // Mensaje neutral/información
+         setMessage(loginMsg);
       } else {
-         setError(loginMsg); // Error de contraseña o similares
+         setError(loginMsg);
       }
     }
   };
@@ -51,77 +51,209 @@ const Login = () => {
       justifyContent: 'center',
       minHeight: '100vh',
       padding: '24px',
-      background: 'var(--bg-color)'
+      background: 'var(--paper)',
     }}>
-      <div className="card" style={{ width: '100%', maxWidth: '400px', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '32px' }}>
-        <div style={{ background: 'var(--primary-color)', padding: '16px', borderRadius: '50%', color: 'white', marginBottom: '24px' }}>
-           <ChefHat size={40} />
-        </div>
-        <h1 style={{ fontSize: '24px', marginBottom: '4px', fontWeight: '900' }}>Cheeseburgers POS</h1>
-        <p style={{ color: 'var(--primary-color)', fontSize: '11px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '20px' }}>
+      <div style={{
+        width: '100%',
+        maxWidth: '400px',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        padding: '40px 32px 32px',
+        background: 'var(--ticket)',
+        border: '1px solid var(--rule)',
+        borderRadius: 'var(--radius-lg)',
+        boxShadow: 'var(--shadow-lg)',
+      }}>
+        {/* Logo SVG */}
+        <BurgerLogo size={64} />
 
-        </p>
-        <p style={{ color: 'var(--text-muted)', marginBottom: '32px', textAlign: 'center', fontSize: '14px' }}>
-          Identifícate con tu ID de Equipo para iniciar tu turno.
+        {/* Brand */}
+        <h1 style={{
+          fontFamily: 'var(--font-display)',
+          fontSize: '28px',
+          fontWeight: 700,
+          color: 'var(--ink)',
+          marginTop: '16px',
+          marginBottom: '2px',
+          letterSpacing: '-0.01em',
+        }}>
+          Cheeseburguers
+        </h1>
+
+        {/* Tagline */}
+        <span style={{
+          fontSize: '10px',
+          fontWeight: 600,
+          color: 'var(--ink-faint)',
+          textTransform: 'uppercase',
+          letterSpacing: '0.2em',
+          marginBottom: '8px',
+        }}>
+          Cocina · Tapachula
+        </span>
+
+        {/* Subtitle */}
+        <p style={{
+          fontFamily: 'var(--font-display)',
+          fontStyle: 'italic',
+          color: 'var(--ink-faint)',
+          marginBottom: '28px',
+          textAlign: 'center',
+          fontSize: '14px',
+          fontWeight: 400,
+        }}>
+          Identifícate para abrir tu turno
         </p>
 
+        {/* Error */}
         {error && (
-          <div style={{ background: 'var(--focus-ring)', color: 'var(--primary-color)', padding: '12px', borderRadius: 'var(--border-radius-sm)', width: '100%', marginBottom: '16px', fontSize: '14px', textAlign: 'center' }}>
+          <div style={{
+            background: 'var(--tomato-soft)',
+            color: 'var(--tomato)',
+            padding: '10px 14px',
+            borderRadius: 'var(--radius-md)',
+            width: '100%',
+            marginBottom: '16px',
+            fontSize: '13px',
+            textAlign: 'center',
+            fontWeight: 500,
+            border: '1px solid rgba(193,53,37,0.15)',
+          }}>
             {error}
           </div>
         )}
 
+        {/* Info message */}
         {message && (
-          <div style={{ background: '#e0f2fe', color: '#0369a1', padding: '12px', borderRadius: 'var(--border-radius-sm)', width: '100%', marginBottom: '16px', fontSize: '14px', textAlign: 'center', border: '1px solid #bae6fd' }}>
+          <div style={{
+            background: 'var(--lettuce-soft)',
+            color: 'var(--lettuce)',
+            padding: '10px 14px',
+            borderRadius: 'var(--radius-md)',
+            width: '100%',
+            marginBottom: '16px',
+            fontSize: '13px',
+            textAlign: 'center',
+            fontWeight: 500,
+            border: '1px solid rgba(91,124,58,0.15)',
+          }}>
             {message}
           </div>
         )}
 
+        {/* Form */}
         <form onSubmit={handleSubmit} style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <div>
-            <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '500' }}>User ID</label>
+            <label style={{
+              display: 'block',
+              marginBottom: '6px',
+              fontSize: '12px',
+              fontWeight: 600,
+              color: 'var(--ink-soft)',
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em',
+            }}>
+              User ID
+            </label>
             <input 
               type="text" 
               value={userId}
               onChange={(e) => setUserId(e.target.value.toUpperCase())}
-              placeholder="Ej. FELIPE12"
-              className="input-field"
-              style={{ padding: '12px', fontSize: '16px' }}
+              placeholder="Ej. PAUL"
+              style={{
+                width: '100%',
+                padding: '12px 14px',
+                fontSize: '15px',
+                fontFamily: 'var(--font-mono)',
+                background: 'var(--paper)',
+                border: '1px solid var(--rule)',
+                borderRadius: 'var(--radius-md)',
+                color: 'var(--ink)',
+                boxSizing: 'border-box',
+              }}
             />
           </div>
           
           <div>
-            <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '500' }}>Contraseña Maestra</label>
+            <label style={{
+              display: 'block',
+              marginBottom: '6px',
+              fontSize: '12px',
+              fontWeight: 600,
+              color: 'var(--ink-soft)',
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em',
+            }}>
+              Contraseña
+            </label>
             <div style={{ position: 'relative' }}>
-              <Lock size={20} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+              <Lock size={16} style={{
+                position: 'absolute',
+                left: '12px',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                color: 'var(--ink-faint)',
+              }} />
               <input 
                 type="password" 
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••"
-                className="input-field"
-                style={{ padding: '12px 12px 12px 40px', fontSize: '16px' }}
+                style={{
+                  width: '100%',
+                  padding: '12px 14px 12px 36px',
+                  fontSize: '15px',
+                  background: 'var(--paper)',
+                  border: '1px solid var(--rule)',
+                  borderRadius: 'var(--radius-md)',
+                  color: 'var(--ink)',
+                  boxSizing: 'border-box',
+                }}
               />
             </div>
           </div>
 
           <button 
             type="submit" 
-            className="btn" 
             style={{ 
-              marginTop: '16px', 
+              marginTop: '8px', 
               padding: '14px', 
-              background: 'var(--primary-color)', 
-              color: 'white', 
-              border: 'none', 
-              fontWeight: '600',
-              fontSize: '16px'
+              background: 'var(--mustard)', 
+              color: 'var(--ticket)', 
+              border: '1px solid var(--mustard-deep)',
+              fontFamily: 'var(--font-body)',
+              fontWeight: 700,
+              fontSize: '15px',
+              borderRadius: 'var(--radius-md)',
+              cursor: 'pointer',
+              boxShadow: 'var(--shadow-md)',
+              transition: 'all var(--transition-fast)',
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.background = 'var(--mustard-deep)';
+              e.currentTarget.style.boxShadow = 'var(--shadow-glow)';
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.background = 'var(--mustard)';
+              e.currentTarget.style.boxShadow = 'var(--shadow-md)';
             }}
           >
-            Iniciar Turno
+            Abrir turno
           </button>
         </form>
       </div>
+
+      {/* Footer */}
+      <p style={{
+        marginTop: '24px',
+        fontSize: '11px',
+        color: 'var(--ink-faint)',
+        fontFamily: 'var(--font-mono)',
+        letterSpacing: '0.05em',
+      }}>
+        v2.0 · Cheeseburguers OS
+      </p>
     </div>
   );
 };
