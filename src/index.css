@@ -1,134 +1,130 @@
-@import "tailwindcss";
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@500;700&family=Archivo+Black&display=swap');
-
 /* ============================================================
-   🟡 NEO-BRUTALIST DESIGN SYSTEM — Cheesy POS
-   Sombras duras (sin blur), bordes gruesos, radius mínimo,
-   tipografía pesada, colores saturados.
-   Mantenemos los nombres de clases originales para no tocar JSX.
+   🧀 CHEESEBURGUERS — DESIGN SYSTEM v2
+   Paleta cream · Fraunces / Geist / JetBrains Mono
+   Sombras cálidas · Cero glassmorphism · WCAG AA
    ============================================================ */
 
+/* ── Fonts (MUST be before tailwindcss) ────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400;1,9..144,500;1,9..144,600;1,9..144,700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+@import "tailwindcss";
+
+/* ── CSS Custom Properties ─────────────────────────────────── */
 :root {
-  /* ---------- COLOR TOKENS ---------- */
-  --ink: #0A0A0A;             /* "negro" funcional */
-  --ink-soft: #1F1F1F;
-  --paper: #FFF8E7;           /* fondo cream cálido (food-friendly) */
-  --paper-2: #FAF1D0;
-  --white: #FFFFFF;
+  /* Papel / fondos */
+  --paper:        #f4eee2;
+  --paper-warm:   #ece4d3;
+  --paper-deep:   #e4dac3;
+  --ticket:       #fbf7ed;
 
-  --yellow: #FFCC00;          /* primario — Cheesy yellow */
-  --yellow-deep: #E5B800;
-  --red: #FF3D3D;             /* secundario — fuerza */
-  --red-deep: #DC2626;
-  --green: #22C55E;
-  --green-deep: #16A34A;
-  --blue: #3B82F6;
-  --pink: #FF6B9D;
-  --orange: #FF8C42;
-  --lime: #BEF264;
+  /* Tinta */
+  --ink:          #1b1410;
+  --ink-soft:     #6b5d4f;
+  --ink-faint:    #a89a87;
+  --rule:         #d8ccb3;
 
-  /* ---------- SEMANTIC ---------- */
-  --bg-color: var(--paper);
-  --bg-container: var(--white);
-  --bg-surface: var(--white);
-  --bg-navbar: var(--ink);
+  /* Acentos comestibles */
+  --mustard:      #c8941f;
+  --mustard-deep: #9c6f12;
+  --tomato:       #c13525;
+  --tomato-soft:  #f3d9d3;
+  --lettuce:      #5b7c3a;
+  --lettuce-soft: #dde6cd;
+  --walnut:       #3d2817;
 
-  --text-main: var(--ink);
-  --text-muted: #4A4A4A;
-  --text-inverse: var(--white);
+  /* ── Semantic aliases (backward-compat con el JSX existente) ── */
+  --bg-color:        var(--paper);
+  --bg-container:    var(--ticket);
+  --bg-surface:      var(--paper-warm);
+  --bg-navbar:       var(--paper);
 
-  --border-color: var(--ink);
-  --border-strong: var(--ink);
+  --text-main:       var(--ink);
+  --text-muted:      var(--ink-soft);
+  --text-inverse:    var(--ticket);
 
-  --primary-color: var(--yellow);
-  --primary-hover: var(--yellow-deep);
+  --border-color:    var(--rule);
+  --border-strong:   var(--ink-faint);
 
-  --accent-color: var(--red);
-  --accent-hover: var(--red-deep);
+  --primary-color:   var(--mustard);
+  --primary-hover:   var(--mustard-deep);
 
-  --success-color: var(--green);
-  --warning-color: var(--orange);
-  --error-color: var(--red);
+  --accent-color:    var(--tomato);
+  --accent-hover:    var(--tomato);
 
-  --status-good: var(--green);
-  --status-low: var(--red);
-  --status-check: var(--orange);
-  --status-reorder: #757575;
+  --success-color:   var(--lettuce);
+  --warning-color:   #d97706;
+  --error-color:     var(--tomato);
 
-  /* ---------- BRUTALIST GEOMETRY ---------- */
-  /* Radius mínimo — la rotundidad es la firma del estilo */
-  --radius-sm: 0px;
-  --radius-md: 4px;
-  --radius-lg: 6px;
-  --radius-xl: 8px;
-  --radius-full: 999px;       /* solo para badges/pills puntuales */
+  --status-good:     var(--lettuce);
+  --status-low:      var(--tomato);
+  --status-check:    var(--mustard);
+  --status-reorder:  var(--ink-faint);
 
-  /* Bordes gruesos */
-  --border-1: 2px;
-  --border-2: 3px;
-  --border-3: 4px;
+  /* ── Geometry ──────────────────────────────────────────────── */
+  --radius-sm:   8px;
+  --radius-md:   10px;
+  --radius-lg:   12px;
+  --radius-xl:   12px;
+  --radius-full: 999px;
 
-  /* Sombras DURAS (offset, sin blur) — la magia brutalist */
-  --shadow-sm: 3px 3px 0 var(--ink);
-  --shadow-md: 5px 5px 0 var(--ink);
-  --shadow-lg: 8px 8px 0 var(--ink);
-  --shadow-xl: 12px 12px 0 var(--ink);
-  --shadow-premium: 16px 16px 0 var(--ink);
-  --shadow-glow: 6px 6px 0 var(--red);
-  --shadow-yellow: 6px 6px 0 var(--yellow-deep);
+  --border-1: 1px;
+  --border-2: 1.5px;
+  --border-3: 2px;
 
-  /* ---------- ANIMACIÓN ---------- */
-  --transition-fast: 100ms cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-slow: 250ms cubic-bezier(0.4, 0, 0.2, 1);
-  --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
-}
+  /* ── Warm shadows (rgb(27,20,16) — NEVER cold black) ─────── */
+  --shadow-sm:      0 1px 2px rgba(27,20,16,0.06);
+  --shadow-md:      0 2px 8px rgba(27,20,16,0.08);
+  --shadow-lg:      0 4px 16px rgba(27,20,16,0.10);
+  --shadow-xl:      0 8px 32px rgba(27,20,16,0.12);
+  --shadow-premium: 0 12px 48px rgba(27,20,16,0.14);
+  --shadow-glow:    0 0 12px rgba(200,148,31,0.25);
+  --shadow-yellow:  0 0 16px rgba(200,148,31,0.30);
 
-/* Modo oscuro brutalist (invierte paper/ink) */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --paper: #0A0A0A;
-    --paper-2: #1A1A1A;
-    --ink: #FFF8E7;
-    --ink-soft: #E5E5E5;
+  /* ── Animation ─────────────────────────────────────────────── */
+  --transition-fast: 120ms ease;
+  --transition-slow: 250ms ease;
+  --spring:          cubic-bezier(0.34, 1.56, 0.64, 1);
 
-    --bg-color: var(--paper);
-    --bg-container: #1A1A1A;
-    --bg-surface: #1A1A1A;
-    --bg-navbar: var(--yellow);
-
-    --text-main: #FFF8E7;
-    --text-muted: #A0A0A0;
-    --border-color: #FFF8E7;
-
-    --shadow-sm: 3px 3px 0 #FFF8E7;
-    --shadow-md: 5px 5px 0 #FFF8E7;
-    --shadow-lg: 8px 8px 0 #FFF8E7;
-    --shadow-xl: 12px 12px 0 #FFF8E7;
-  }
+  /* ── Typography stacks ─────────────────────────────────────── */
+  --font-display: 'Fraunces', Georgia, 'Times New Roman', serif;
+  --font-body:    'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono:    'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
 }
 
 /* ============================================================
    RESET
    ============================================================ */
-* {
+*, *::before, *::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
   -webkit-tap-highlight-color: transparent;
-  outline: none;
+}
+
+*:focus-visible {
+  outline: 2px solid var(--mustard);
+  outline-offset: 2px;
 }
 
 html, body {
-  font-family: 'Inter', sans-serif;
-  background-color: var(--bg-color);
-  color: var(--text-main);
+  font-family: var(--font-body);
+  background-color: var(--paper);
+  color: var(--ink);
   font-weight: 500;
-  line-height: 1.45;
+  line-height: 1.5;
+  font-size: 15px;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 
-  /* Patrón sutil de fondo brutalist (puntos) */
-  background-image: radial-gradient(circle, rgba(10,10,10,0.06) 1px, transparent 1px);
-  background-size: 22px 22px;
+  /* Micro-textura dot-pattern 24px — sutilísima */
+  background-image: radial-gradient(
+    circle,
+    rgba(27, 20, 16, 0.04) 1px,
+    transparent 1px
+  );
+  background-size: 24px 24px;
 
   padding-top: env(safe-area-inset-top);
   padding-bottom: env(safe-area-inset-bottom);
@@ -138,164 +134,182 @@ html, body {
 }
 
 /* ============================================================
-   TIPOGRAFÍA — pesada y angular
+   TIPOGRAFÍA
    ============================================================ */
+
+/* Display / titulares */
 h1, h2, h3 {
-  font-family: 'Archivo Black', 'Inter', sans-serif;
-  letter-spacing: -0.02em;
-  font-weight: 900;
-  text-transform: uppercase;
-  color: var(--text-main);
-}
-
-h1 { font-size: 2.5rem; line-height: 1; }
-h2 { font-size: 1.875rem; line-height: 1.05; }
-h3 { font-size: 1.375rem; line-height: 1.1; }
-
-h4, h5, h6 {
-  font-family: 'Inter', sans-serif;
-  font-weight: 800;
+  font-family: var(--font-display);
+  color: var(--ink);
   letter-spacing: -0.01em;
-  color: var(--text-main);
+  line-height: 1.2;
+}
+h1 { font-size: 1.75rem; font-weight: 700; }
+h2 { font-size: 1.375rem; font-weight: 700; }
+h3 { font-size: 1.125rem; font-weight: 600; }
+
+/* UI / body labels */
+h4, h5, h6 {
+  font-family: var(--font-body);
+  font-weight: 600;
+  color: var(--ink);
 }
 
-p { font-weight: 500; }
+p { font-weight: 500; color: var(--ink); }
+
+/* Monospace — timers, IDs, money, tabular */
+.mono, .tabular {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
 
 a {
-  color: var(--text-main);
+  color: var(--mustard-deep);
   text-decoration: underline;
-  text-decoration-thickness: 2px;
+  text-decoration-thickness: 1px;
   text-underline-offset: 3px;
-  font-weight: 700;
+  font-weight: 600;
+  transition: color var(--transition-fast);
 }
-a:hover { background: var(--yellow); }
+a:hover {
+  color: var(--mustard);
+}
 
 /* ============================================================
-   .card — superficies con borde+sombra dura
+   .card — superficies ticket/cream
    ============================================================ */
 .card {
-  background: var(--bg-surface);
-  border: var(--border-2) solid var(--ink);
-  border-radius: var(--radius-md);
+  background: var(--ticket);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-lg);
   padding: 20px;
   box-shadow: var(--shadow-md);
   transition: transform var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 .card:hover {
-  transform: translate(-2px, -2px);
   box-shadow: var(--shadow-lg);
 }
 
-.card:active {
-  transform: translate(2px, 2px);
-  box-shadow: var(--shadow-sm);
-}
-
-/* Variantes de color para .card */
-.card-yellow  { background: var(--yellow); }
-.card-red     { background: var(--red); color: var(--white); }
-.card-green   { background: var(--green); }
-.card-blue    { background: var(--blue); color: var(--white); }
-.card-pink    { background: var(--pink); }
-.card-lime    { background: var(--lime); }
+/* Variantes de card con color */
+.card-mustard  { background: var(--mustard); color: var(--ticket); border-color: var(--mustard-deep); }
+.card-tomato   { background: var(--tomato); color: var(--ticket); border-color: var(--tomato); }
+.card-lettuce  { background: var(--lettuce); color: var(--ticket); border-color: var(--lettuce); }
 
 /* ============================================================
-   .btn — siempre con borde grueso + sombra dura
+   .btn — bordes finos, esquinas suaves, sin brutalismo
    ============================================================ */
 .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
-  padding: 14px 24px;
+  gap: 8px;
+  padding: 10px 18px;
   border-radius: var(--radius-md);
-  font-family: 'Inter', sans-serif;
-  font-size: 15px;
-  font-weight: 800;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
   cursor: pointer;
-  border: var(--border-2) solid var(--ink);
-  background: var(--white);
+  border: 1px solid var(--rule);
+  background: var(--ticket);
   color: var(--ink);
-  box-shadow: var(--shadow-md);
-  transition: transform var(--transition-fast), box-shadow var(--transition-fast), background var(--transition-fast);
+  box-shadow: var(--shadow-sm);
+  transition: all var(--transition-fast);
   user-select: none;
-  min-height: 52px;
+  min-height: 44px;
+  text-decoration: none;
 }
 
 .btn:hover {
-  transform: translate(-2px, -2px);
-  box-shadow: var(--shadow-lg);
+  box-shadow: var(--shadow-md);
+  border-color: var(--ink-faint);
 }
 
 .btn:active {
-  transform: translate(2px, 2px);
+  transform: translateY(1px);
   box-shadow: var(--shadow-sm);
 }
 
 .btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-  box-shadow: var(--shadow-sm) !important;
   transform: none !important;
 }
 
-/* PRIMARY — amarillo Cheesy */
+/* PRIMARY — mostaza */
 .btn-primary {
-  background: var(--yellow);
-  color: var(--ink);
+  background: var(--mustard);
+  color: var(--ticket);
+  border-color: var(--mustard-deep);
+}
+.btn-primary:hover {
+  background: var(--mustard-deep);
+  box-shadow: var(--shadow-glow);
 }
 
-/* SECONDARY — rojo de impacto */
+/* SECONDARY — tomato */
 .btn-secondary {
-  background: var(--red);
-  color: var(--white);
+  background: var(--tomato);
+  color: var(--ticket);
+  border-color: var(--tomato);
 }
 
-/* GHOST — solo borde */
+/* GHOST — sin fondo */
 .btn-ghost {
   background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+  color: var(--ink-soft);
+}
+.btn-ghost:hover {
+  background: var(--paper-warm);
   color: var(--ink);
+  box-shadow: none;
 }
 
 /* SUCCESS / DANGER */
-.btn-success { background: var(--green); color: var(--ink); }
-.btn-danger  { background: var(--red);   color: var(--white); }
+.btn-success {
+  background: var(--lettuce);
+  color: var(--ticket);
+  border-color: var(--lettuce);
+}
+.btn-success:hover { background: #4d6b31; }
 
-/* ============================================================
-   .glass-card — el nombre se queda pero ahora ES brutalist
-   (mismo lenguaje, sin glassmorphism)
-   ============================================================ */
-.glass-card {
-  background: var(--white);
-  border: var(--border-2) solid var(--ink);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-md);
-  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+.btn-danger {
+  background: var(--tomato);
+  color: var(--ticket);
+  border-color: var(--tomato);
 }
 
+/* ============================================================
+   .glass-card → ahora es cream-card (backward compat)
+   ============================================================ */
+.glass-card {
+  background: var(--ticket);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  transition: box-shadow var(--transition-fast);
+}
 .glass-card:hover {
-  transform: translate(-2px, -2px);
   box-shadow: var(--shadow-lg);
 }
 
 .glass-surface {
-  background: var(--paper-2);
-  border: var(--border-2) solid var(--ink);
-  border-radius: var(--radius-md);
+  background: var(--paper-warm);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-lg);
 }
 
 .glass {
-  background: var(--ink);
+  background: var(--walnut);
   color: var(--paper);
-  border: var(--border-2) solid var(--ink);
+  border: 1px solid var(--walnut);
   box-shadow: var(--shadow-md);
 }
 
 /* ============================================================
-   LAYOUTS — bento queda, pero con líneas duras
+   LAYOUTS
    ============================================================ */
 .bento-grid {
   display: grid;
@@ -316,57 +330,111 @@ a:hover { background: var(--yellow); }
 }
 
 /* ============================================================
-   INPUTS — bordes gruesos, focus dramático
+   INPUTS — bordes finos rule, focus mostaza
    ============================================================ */
 input, textarea, select {
-  font-family: 'Inter', sans-serif;
-  font-weight: 600;
-  font-size: 15px;
-  padding: 12px 14px;
-  background: var(--white);
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: 14px;
+  padding: 10px 14px;
+  background: var(--ticket);
   color: var(--ink);
-  border: var(--border-2) solid var(--ink);
+  border: 1px solid var(--rule);
   border-radius: var(--radius-md);
-  transition: box-shadow var(--transition-fast), transform var(--transition-fast);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 input:focus, textarea:focus, select:focus {
-  box-shadow: var(--shadow-md);
-  transform: translate(-2px, -2px);
+  border-color: var(--mustard);
+  box-shadow: 0 0 0 3px rgba(200, 148, 31, 0.15);
+  outline: none;
 }
 
-input::placeholder { color: #999; font-weight: 500; }
+input::placeholder, textarea::placeholder {
+  color: var(--ink-faint);
+  font-weight: 400;
+}
 
 /* ============================================================
-   BADGES / TAGS — pequeños, agresivos
+   BADGES / PILLS
    ============================================================ */
 .badge {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 4px 10px;
-  background: var(--ink);
-  color: var(--paper);
-  border: 2px solid var(--ink);
-  border-radius: var(--radius-sm);
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
+  gap: 5px;
+  padding: 3px 10px;
+  background: var(--paper-warm);
+  color: var(--ink-soft);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-full);
+  font-size: 12px;
+  font-weight: 600;
+  font-family: var(--font-body);
 }
 
-.badge-yellow { background: var(--yellow); color: var(--ink); }
-.badge-red    { background: var(--red);    color: var(--white); }
-.badge-green  { background: var(--green);  color: var(--ink); }
-.badge-blue   { background: var(--blue);   color: var(--white); }
+.badge-mustard {
+  background: rgba(200, 148, 31, 0.12);
+  color: var(--mustard-deep);
+  border-color: rgba(200, 148, 31, 0.25);
+}
+.badge-tomato {
+  background: var(--tomato-soft);
+  color: var(--tomato);
+  border-color: rgba(193, 53, 37, 0.2);
+}
+.badge-lettuce {
+  background: var(--lettuce-soft);
+  color: var(--lettuce);
+  border-color: rgba(91, 124, 58, 0.2);
+}
+.badge-walnut {
+  background: rgba(61, 40, 23, 0.08);
+  color: var(--walnut);
+  border-color: rgba(61, 40, 23, 0.15);
+}
+
+/* Backward compat */
+.badge-yellow { background: rgba(200,148,31,0.12); color: var(--mustard-deep); border-color: rgba(200,148,31,0.25); }
+.badge-red    { background: var(--tomato-soft); color: var(--tomato); border-color: rgba(193,53,37,0.2); }
+.badge-green  { background: var(--lettuce-soft); color: var(--lettuce); border-color: rgba(91,124,58,0.2); }
+.badge-blue   { background: rgba(59,130,246,0.1); color: #2563eb; border-color: rgba(59,130,246,0.2); }
+
+/* ── Modifier pills (inline en orden tickets) ──────────────── */
+.pill-doble-carne {
+  display: inline-flex;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  font-size: 11px;
+  font-weight: 600;
+  background: var(--tomato-soft);
+  color: var(--tomato);
+}
+.pill-bebida {
+  display: inline-flex;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  font-size: 11px;
+  font-weight: 600;
+  background: var(--lettuce-soft);
+  color: var(--lettuce);
+}
+.pill-nota {
+  display: inline-flex;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  font-size: 11px;
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 400;
+  color: var(--ink-faint);
+}
 
 /* ============================================================
-   SKELETON LOADING — más bold
+   SKELETON LOADING
    ============================================================ */
 .skeleton {
-  background: var(--paper-2);
-  border: var(--border-2) solid var(--ink);
-  border-radius: var(--radius-sm);
+  background: var(--paper-warm);
+  border-radius: var(--radius-md);
   position: relative;
   overflow: hidden;
 }
@@ -375,8 +443,8 @@ input::placeholder { color: #999; font-weight: 500; }
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(90deg, transparent 0%, rgba(10,10,10,0.08) 50%, transparent 100%);
-  animation: shimmer 1.4s infinite;
+  background: linear-gradient(90deg, transparent 0%, rgba(27,20,16,0.04) 50%, transparent 100%);
+  animation: shimmer 1.5s infinite;
 }
 
 @keyframes shimmer {
@@ -385,60 +453,110 @@ input::placeholder { color: #999; font-weight: 500; }
 }
 
 /* ============================================================
-   PULSE — ahora con un "thump" más agresivo
+   PULSE — suave, warm
    ============================================================ */
 .pulse {
-  animation: brutal-thump 0.35s var(--spring);
+  animation: warm-pulse 2s ease-in-out infinite;
 }
 
-@keyframes brutal-thump {
-  0%   { transform: scale(1); box-shadow: var(--shadow-md); }
-  40%  { transform: scale(1.04) translate(-3px, -3px); box-shadow: var(--shadow-xl); }
-  100% { transform: scale(1); box-shadow: var(--shadow-md); }
+@keyframes warm-pulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.6; }
+}
+
+/* Ping para órdenes nuevas (<60s) */
+.ping-new {
+  animation: ping-mustard 1.5s ease-in-out 3;
+}
+
+@keyframes ping-mustard {
+  0%   { box-shadow: 0 0 0 0 rgba(200, 148, 31, 0.4); }
+  70%  { box-shadow: 0 0 0 10px rgba(200, 148, 31, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(200, 148, 31, 0); }
 }
 
 /* ============================================================
-   SCROLLBAR — visible pero brutal
+   SCROLLBAR — sutil, warm
    ============================================================ */
-::-webkit-scrollbar { width: 14px; height: 14px; }
-::-webkit-scrollbar-track {
-  background: var(--paper);
-  border-left: 2px solid var(--ink);
-}
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb {
-  background: var(--ink);
-  border: 3px solid var(--paper);
+  background: var(--rule);
+  border-radius: var(--radius-full);
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--yellow);
-  border: 3px solid var(--ink);
+  background: var(--ink-faint);
 }
 
 /* ============================================================
-   UTILS extra — solo si los necesitas
+   UTILS
    ============================================================ */
+
+/* Display font helper */
+.font-display {
+  font-family: var(--font-display);
+}
+.font-mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Divider */
+.divider {
+  height: 1px;
+  background: var(--rule);
+  border: 0;
+  margin: 20px 0;
+}
+
+/* Text selection */
+::selection {
+  background: rgba(200, 148, 31, 0.25);
+  color: var(--ink);
+}
+
+/* Timer that goes red */
+.timer-warn {
+  color: var(--tomato) !important;
+  font-weight: 700;
+}
+
+/* Fraunces italic for empty states */
+.empty-state {
+  font-family: var(--font-display);
+  font-style: italic;
+  color: var(--ink-faint);
+  font-weight: 400;
+  font-size: 15px;
+}
+
+/* Backward compat tag */
 .brutal-tag {
   display: inline-block;
-  padding: 6px 14px;
-  background: var(--yellow);
-  border: var(--border-2) solid var(--ink);
-  border-radius: var(--radius-sm);
-  font-weight: 900;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  box-shadow: var(--shadow-sm);
-  transform: rotate(-2deg);
+  padding: 4px 12px;
+  background: rgba(200,148,31,0.12);
+  color: var(--mustard-deep);
+  border: 1px solid rgba(200,148,31,0.25);
+  border-radius: var(--radius-full);
+  font-weight: 600;
+  font-size: 12px;
 }
 
 .brutal-divider {
-  height: 4px;
-  background: var(--ink);
+  height: 1px;
+  background: var(--rule);
   border: 0;
   margin: 24px 0;
 }
 
-/* Selección de texto */
-::selection {
-  background: var(--yellow);
-  color: var(--ink);
+/* ============================================================
+   RESPONSIVE TWEAKS
+   ============================================================ */
+@media (max-width: 768px) {
+  h1 { font-size: 1.375rem; }
+  h2 { font-size: 1.125rem; }
+
+  .bento-grid {
+    grid-template-columns: 1fr;
+  }
 }
