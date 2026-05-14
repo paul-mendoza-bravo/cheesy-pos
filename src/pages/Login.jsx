@@ -1,16 +1,39 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Lock } from 'lucide-react';
 import BurgerLogo from '../components/BurgerLogo';
+import fpPromise from '@fingerprintjs/fingerprintjs';
 
 const Login = () => {
   const [userId, setUserId] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
+  const [deviceId, setDeviceId] = useState('');
+  const [fingerprintHash, setFingerprintHash] = useState('');
   const { login } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    let id = localStorage.getItem('cheesy_device_id');
+    if (!id) {
+      id = crypto.randomUUID();
+      localStorage.setItem('cheesy_device_id', id);
+    }
+    setDeviceId(id);
+
+    const getFingerprint = async () => {
+      try {
+        const fp = await fpPromise.load();
+        const result = await fp.get();
+        setFingerprintHash(result.visitorId);
+      } catch (e) {
+        console.error('Failed to load fingerprint:', e);
+      }
+    };
+    getFingerprint();
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -22,7 +45,7 @@ const Login = () => {
       return;
     }
 
-    const { success, message: loginMsg, user } = await login(userId, password);
+    const { success, message: loginMsg, user } = await login(userId, password, deviceId, fingerprintHash);
     
     if (success) {
       if (user?.role === 'admin') {

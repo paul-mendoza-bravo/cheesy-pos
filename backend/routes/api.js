@@ -11,10 +11,26 @@ export const createApiRoutes = (io) => {
   // USERS ENDPOINTS
   // ==========================================
 
+  const lookupGeo = async (ip) => {
+    if (!ip || ip === '127.0.0.1' || ip === '::1' || ip.startsWith('192.168.') || ip.startsWith('10.') || ip === 'unknown') {
+      return { country: null, city: null };
+    }
+    try {
+      const res = await fetch(`http://ip-api.com/json/${ip}?fields=countryCode,city`, { signal: AbortSignal.timeout(2000) });
+      if (res.ok) {
+        const data = await res.json();
+        return { country: data.countryCode, city: data.city };
+      }
+    } catch (e) {
+      console.warn(`Geo lookup falló para ${ip}:`, e.message);
+    }
+    return { country: null, city: null };
+  };
+
   // Login / Register Pending User
   router.post('/users/login', async (req, res) => {
     try {
-      const { userId, password } = req.body;
+      const { userId, password, deviceId, fingerprintHash } = req.body;
 
       if (!userId) {
         return res.status(400).json({ success: false, message: 'Se requiere ID de usuario' });
@@ -22,17 +38,39 @@ export const createApiRoutes = (io) => {
 
       const uppercaseId = userId.trim().toUpperCase();
 
+      const ip = req.headers['x-forwarded-for']?.split(',')[0].trim() || req.socket.remoteAddress || 'unknown';
+      const userAgent = req.headers['user-agent']?.substring(0, 500) || 'Unknown';
+      const geo = await lookupGeo(ip);
+
+      const logAttempt = async (success, uid) => {
+        try {
+          await pool.query(
+            `INSERT INTO login_logs (user_id, success, ip_address, user_agent, device_id, fingerprint_hash, geo_country, geo_city, event_type)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+            [uid || uppercaseId, success, ip, userAgent, deviceId || null, fingerprintHash || null, geo.country || null, geo.city || null, 'login']
+          );
+        } catch (logErr) {
+          console.error('Failed to save login log:', logErr);
+        }
+      };
+
       // SUPERADMIN Bypass
       if (uppercaseId === 'SUPERADMIN') {
         if (password !== '12345') {
+          await logAttempt(false, 'SUPERADMIN');
           return res.status(401).json({ success: false, message: 'Contraseña de administrador incorrecta' });
         }
         const adminResult = await pool.query('SELECT * FROM users WHERE id = $1', ['SUPERADMIN']);
-        return res.json({ success: true, user: adminResult.rows[0] });
+        const user = adminResult.rows[0];
+        
+        await logAttempt(true, user.id);
+
+        return res.json({ success: true, user });
       }
 
       // For all other staff, validate master password
       if (password !== MASTER_PASSWORD) {
+        await logAttempt(false, uppercaseId);
         return res.status(401).json({ success: false, message: 'Contraseña incorrecta' });
       }
 
@@ -43,6 +81,7 @@ export const createApiRoutes = (io) => {
           'INSERT INTO users (id, role, status) VALUES ($1, $2, $3) RETURNING *',
           [uppercaseId, 'ayudante', 'PENDING_APPROVAL']
         );
+        await logAttempt(true, newUserResult.rows[0].id);
         return res.status(201).json({
           success: false,
           message: 'Usuario registrado. Esperando aprobación del Admin.',
@@ -53,13 +92,16 @@ export const createApiRoutes = (io) => {
       const user = result.rows[0];
 
       if (user.status === 'PENDING_APPROVAL') {
+        await logAttempt(true, user.id); // technically successful auth, but pending
         return res.status(403).json({ success: false, message: 'Cuenta en espera de aprobación por el Administrador.' });
       }
 
       if (user.status === 'ACTIVE') {
+        await logAttempt(true, user.id);
         return res.json({ success: true, user });
       }
 
+      await logAttempt(false, user.id);
       return res.status(400).json({ success: false, message: 'Estado de cuenta inválido.' });
 
     } catch (error) {
@@ -76,6 +118,35 @@ export const createApiRoutes = (io) => {
     } catch (error) {
       console.error('Fetch users error:', error);
       res.status(500).json({ error: 'Error fetching users' });
+    }
+  });
+
+  // Get login logs
+  router.get('/login-logs', async (req, res) => {
+    try {
+      const result = await pool.query('SELECT * FROM login_logs ORDER BY created_at DESC LIMIT 100');
+      res.json(result.rows);
+    } catch (error) {
+      console.error('Fetch login logs error:', error);
+      res.status(500).json({ error: 'Error fetching login logs' });
+    }
+  });
+
+  // Get login alerts (3+ failed in last hour per IP)
+  router.get('/login-logs/alerts', async (req, res) => {
+    try {
+      const result = await pool.query(`
+        SELECT ip_address as ip, COUNT(*) as attempts, array_agg(DISTINCT user_id) as users
+        FROM login_logs
+        WHERE success = FALSE 
+          AND created_at >= NOW() - INTERVAL '1 hour'
+        GROUP BY ip_address
+        HAVING COUNT(*) >= 3
+      `);
+      res.json({ alerts: result.rows });
+    } catch (error) {
+      console.error('Fetch login alerts error:', error);
+      res.status(500).json({ error: 'Error fetching login alerts' });
     }
   });
 

@@ -90,7 +90,23 @@ export const setupDatabase = async () => {
             difference DECIMAL(10,2) NOT NULL,
             counted_by VARCHAR(100) REFERENCES users(id) ON DELETE SET NULL,
             created_at TIMESTAMPTZ DEFAULT NOW()
-          )`
+          )`,
+          `CREATE TABLE IF NOT EXISTS login_logs (
+            id SERIAL PRIMARY KEY,
+            user_id VARCHAR(100) REFERENCES users(id) ON DELETE CASCADE,
+            ip_address VARCHAR(50),
+            user_agent TEXT,
+            created_at TIMESTAMPTZ DEFAULT NOW()
+          )`,
+          `ALTER TABLE login_logs ADD COLUMN IF NOT EXISTS success BOOLEAN DEFAULT true`,
+          `ALTER TABLE login_logs ADD COLUMN IF NOT EXISTS device_id VARCHAR(100)`,
+          `ALTER TABLE login_logs ADD COLUMN IF NOT EXISTS fingerprint_hash VARCHAR(64)`,
+          `ALTER TABLE login_logs ADD COLUMN IF NOT EXISTS geo_country VARCHAR(5)`,
+          `ALTER TABLE login_logs ADD COLUMN IF NOT EXISTS geo_city VARCHAR(100)`,
+          `ALTER TABLE login_logs ADD COLUMN IF NOT EXISTS event_type VARCHAR(20) DEFAULT 'login'`,
+          `CREATE INDEX IF NOT EXISTS idx_login_logs_user_created ON login_logs(user_id, created_at DESC)`,
+          `CREATE INDEX IF NOT EXISTS idx_login_logs_ip ON login_logs(ip_address)`,
+          `CREATE INDEX IF NOT EXISTS idx_login_logs_failed ON login_logs(success, created_at DESC) WHERE success = FALSE`
         ];
 
         for (const migration of migrations) {

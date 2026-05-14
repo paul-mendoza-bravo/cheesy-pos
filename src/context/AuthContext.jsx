@@ -48,14 +48,14 @@ export const AuthProvider = ({ children }) => {
     }
   }, [usersDB]);
 
-  const login = async (rawUserId, password) => {
+  const login = async (rawUserId, password, deviceId, fingerprintHash) => {
     const uppercaseId = rawUserId.trim().toUpperCase();
 
     try {
       const res = await fetch(`${API_URL}/users/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: uppercaseId, password })
+        body: JSON.stringify({ userId: uppercaseId, password, deviceId, fingerprintHash })
       });
       
       const data = await res.json();

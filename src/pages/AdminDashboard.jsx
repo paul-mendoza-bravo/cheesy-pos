@@ -126,6 +126,8 @@ const AdminDashboard = () => {
   const [topProducts, setTopProducts] = useState([]);     // [{ productName, totalQty, grossRevenue, contributionMargin }]
   const [outflows,    setOutflows]    = useState([]);     // [{ id, amount, description, createdAt }]
   const [dailyOutflowTotal, setDailyOutflowTotal] = useState(0);
+  const [loginLogs,   setLoginLogs]   = useState([]);
+  const [loginAlerts, setLoginAlerts] = useState([]);
   const [biLoading,   setBiLoading]   = useState(false);
 
   // ── Estado del modal de egresos ──────────────────────────────────────────
@@ -159,20 +161,26 @@ const AdminDashboard = () => {
   const fetchBIData = useCallback(async () => {
     setBiLoading(true);
     try {
-      const [summaryRes, topRes, outflowsRes] = await Promise.all([
+      const [summaryRes, topRes, outflowsRes, logsRes, alertsRes] = await Promise.all([
         fetch(`${API_BASE}/bi/summary`),
         fetch(`${API_BASE}/bi/top-products`),
         fetch(`${API_BASE}/cash-outflows/today`),
+        fetch(`${API_BASE}/login-logs`),
+        fetch(`${API_BASE}/login-logs/alerts`)
       ]);
-      const [summary, top, outflowData] = await Promise.all([
+      const [summary, top, outflowData, logsData, alertsData] = await Promise.all([
         summaryRes.json(),
         topRes.json(),
         outflowsRes.json(),
+        logsRes.json(),
+        alertsRes.json()
       ]);
       setBiStats(summary);
       setTopProducts(Array.isArray(top) ? top : []);
       setOutflows(outflowData.outflows || []);
       setDailyOutflowTotal(outflowData.dailyTotal || 0);
+      setLoginLogs(Array.isArray(logsData) ? logsData : []);
+      setLoginAlerts(alertsData.alerts || []);
     } catch (err) {
       console.error('[BI] Error fetching data:', err);
     } finally {
@@ -308,6 +316,24 @@ const AdminDashboard = () => {
     REJECTED:  { bg: 'rgba(239,68,68,0.1)',    color: '#ef4444', label: 'Rechazado' },
   };
 
+  // ── Helper: Parse User Agent ───────────────────────────────────────────────
+  const parseUserAgent = (ua) => {
+    if (!ua || ua === 'Unknown') return 'Desconocido';
+    let browser = 'Desconocido', os = 'Desconocido';
+    if (ua.includes('Chrome')) browser = 'Chrome';
+    else if (ua.includes('Safari') && !ua.includes('Chrome')) browser = 'Safari';
+    else if (ua.includes('Firefox')) browser = 'Firefox';
+    else if (ua.includes('Edge')) browser = 'Edge';
+
+    if (ua.includes('Windows')) os = 'Windows';
+    else if (ua.includes('Mac OS')) os = 'macOS';
+    else if (ua.includes('Linux')) os = 'Linux';
+    else if (ua.includes('Android')) os = 'Android';
+    else if (ua.includes('iPhone') || ua.includes('iPad')) os = 'iOS';
+
+    return `${browser} · ${os}`;
+  };
+
   // ────────────────────────────────────────────────────────────────────────
   return (
     <div style={{ paddingBottom: '40px' }}>
@@ -383,6 +409,7 @@ const AdminDashboard = () => {
             { key: 'inventory',     icon: <Package size={14} />,      label: 'Inventarios',    activeColor: null      },
             { key: 'client_orders', icon: <Smartphone size={14} />,   label: 'Online',         activeColor: '#f97316', badge: clientOrders.filter(o => o.status === 'PENDING').length },
             { key: 'marketing',     icon: <Megaphone size={14} />,    label: 'Marketing (Prompts)', activeColor: '#ec4899' },
+            { key: 'logs',          icon: <ArchiveRestore size={14} />,label: 'Logs Acceso',   activeColor: '#10b981' },
             { key: 'trash',         icon: <Trash2 size={14} />,       label: `Papelera (${trashedOrders.length})`, activeColor: null },
           ].map(({ key, icon, label, activeColor, badge }) => (
             <button
@@ -837,6 +864,101 @@ const AdminDashboard = () => {
               <div style={{ padding: '40px 20px', textAlign: 'center', color: 'var(--text-muted)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
                 <Package size={32} opacity={0.5} />
                 No hay reportes de inventario recibidos.
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ══════════════════════════════════════════════════════════════════ */}
+      {/* TAB: Logs de Acceso (AUDIT)                                        */}
+      {/* ══════════════════════════════════════════════════════════════════ */}
+      {viewTab === 'logs' && (
+        <div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '20px', margin: 0 }}>Audit · Logins</h2>
+          </div>
+
+          {/* Alert Banner */}
+          {loginAlerts.length > 0 && (
+            <div style={{ background: 'var(--ticket)', borderLeft: '3px solid var(--tomato)', padding: '16px', borderRadius: 'var(--radius-md)', marginBottom: '24px', boxShadow: 'var(--shadow-sm)' }}>
+              {loginAlerts.map((alert, i) => (
+                <div key={i} style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
+                  <AlertCircle size={18} color="var(--tomato)" style={{ marginTop: '2px' }} />
+                  <p style={{ fontFamily: 'var(--font-display)', fontSize: '15px', color: 'var(--ink)', margin: 0, lineHeight: 1.4 }}>
+                    <strong>{alert.attempts} intentos fallidos</strong> en la última hora desde IP {alert.ip} sobre los usuarios: <span style={{ color: 'var(--tomato)' }}>{alert.users.join(', ')}</span>
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Audit Table (Dense) */}
+          <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+            {loginLogs.map((log, idx) => (
+              <div key={log.id} style={{ 
+                display: 'grid', 
+                gridTemplateColumns: '1.2fr 1fr 1fr 1fr 1fr 1.5fr 1fr', 
+                gap: '12px', 
+                padding: '12px 16px', 
+                background: idx % 2 === 0 ? 'var(--paper-warm)' : 'transparent',
+                borderBottom: idx !== loginLogs.length - 1 ? '1px solid var(--rule)' : 'none',
+                alignItems: 'center'
+              }}>
+                {/* Cuándo */}
+                <div>
+                  <div style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontSize: '12px', color: 'var(--ink-soft)' }}>
+                    {new Date(log.created_at).toLocaleDateString('es-MX')}
+                  </div>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--ink)' }}>
+                    {new Date(log.created_at).toLocaleTimeString('es-MX')}
+                  </div>
+                </div>
+
+                {/* Usuario */}
+                <div style={{ fontFamily: 'var(--font-display)', fontWeight: 500, fontSize: '14px', color: 'var(--ink)' }}>
+                  {log.user_id}
+                </div>
+
+                {/* Estado */}
+                <div>
+                  {log.success ? (
+                    <span style={{ background: 'var(--lettuce-soft)', color: 'var(--lettuce)', padding: '2px 8px', borderRadius: '999px', fontSize: '11px', fontWeight: 700 }}>OK</span>
+                  ) : (
+                    <span style={{ background: 'var(--tomato-soft)', color: 'var(--tomato)', padding: '2px 8px', borderRadius: '999px', fontSize: '11px', fontWeight: 700 }}>FALLIDO</span>
+                  )}
+                </div>
+
+                {/* IP */}
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--ink)' }}>
+                  {log.ip_address}
+                </div>
+
+                {/* Geo */}
+                <div style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontSize: '13px', color: 'var(--ink-soft)' }}>
+                  {log.geo_city ? `${log.geo_city}, ${log.geo_country}` : '—'}
+                </div>
+
+                {/* Navegador */}
+                <div style={{ fontFamily: 'var(--font-body)', fontSize: '12px', color: 'var(--ink)' }}>
+                  {parseUserAgent(log.user_agent)}
+                </div>
+
+                {/* Device */}
+                <div title={log.device_id} style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--ink-faint)', cursor: 'help' }}>
+                  {log.device_id ? log.device_id.substring(0, 8) : '—'}
+                </div>
+              </div>
+            ))}
+            
+            {/* Header if there are items, placed creatively before the grid visually if needed, but since it's dense, let's keep it clean without headers, just rows as requested or we can add a simple header. The prompt says "Tabla densa". */}
+            
+            {loginLogs.length === 0 && (
+              <div style={{ padding: '40px 20px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
+                <ArchiveRestore size={32} color="var(--ink-faint)" />
+                <p style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontSize: '14px', color: 'var(--ink-soft)', margin: 0 }}>
+                  Sin logins registrados aún. Cuando alguien entre, aparecerá aquí.
+                </p>
               </div>
             )}
           </div>
